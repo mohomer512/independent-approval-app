@@ -1,0 +1,11 @@
+@IndependentApproval.Api_HostAddress = https://localhost:7074
+
+GET {{IndependentApproval.Api_HostAddress}}/api/system/info
+Accept: application/json
+
+###
+
+GET {{IndependentApproval.Api_HostAddress}}/health
+Accept: text/plain
+
+###
