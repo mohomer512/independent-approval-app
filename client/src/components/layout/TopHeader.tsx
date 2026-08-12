@@ -1,18 +1,34 @@
 import { Avatar, Button, Tooltip } from '@fluentui/react-components'
 import { Alert24Regular, Navigation24Regular } from '@fluentui/react-icons'
-import type { AppUser } from '../../models'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 
 interface TopHeaderProps {
   readonly pageTitle: string
-  readonly user: AppUser
   readonly onOpenNavigation: () => void
 }
 
 export function TopHeader({
   pageTitle,
-  user,
   onOpenNavigation,
 }: TopHeaderProps) {
+  const { data: currentUser, loading, retry } = useCurrentUser()
+  const authenticatedUser =
+    !loading && currentUser?.isAuthenticated === true ? currentUser : null
+  const isUnavailable = !loading && authenticatedUser === null
+  const primaryText = authenticatedUser
+    ? authenticatedUser.userName
+    : loading
+      ? 'Identifying user'
+      : 'User unavailable'
+  const profileLabel = authenticatedUser
+    ? `Signed in as ${authenticatedUser.userName}, ${authenticatedUser.accountName}`
+    : primaryText
+  const profileStateClass = loading
+    ? ' user-profile--loading'
+    : isUnavailable
+      ? ' user-profile--unavailable'
+      : ''
+
   return (
     <header className="top-header">
       <div className="top-header__title-group">
@@ -40,19 +56,39 @@ export function TopHeader({
         </Tooltip>
         <span className="notification-button__indicator" aria-hidden="true" />
 
-        <div className="user-profile" aria-label={`Signed in as ${user.name}`}>
+        <div
+          className={`user-profile${profileStateClass}`}
+          aria-label={profileLabel}
+          aria-busy={loading}
+        >
           <Avatar
-            name={user.name}
-            initials={user.initials}
+            className="user-profile__avatar"
+            name={primaryText}
             color="colorful"
             size={36}
           />
-          <div className="user-profile__details">
-            <span className="user-profile__name">{user.name}</span>
-            <span className="user-profile__meta">
-              {user.username} · {user.role}
-            </span>
+          <div
+            className="user-profile__details"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span className="user-profile__name">{primaryText}</span>
+            {authenticatedUser && (
+              <span className="user-profile__meta">
+                {authenticatedUser.accountName}
+              </span>
+            )}
           </div>
+          {isUnavailable && (
+            <Button
+              className="user-profile__retry"
+              appearance="subtle"
+              size="small"
+              onClick={retry}
+            >
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     </header>

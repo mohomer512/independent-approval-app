@@ -352,6 +352,11 @@
   white-space: nowrap;
 }
 
+.user-profile__retry.fui-Button {
+  min-width: auto;
+  flex: 0 0 auto;
+}
+
 .page-content {
   width: 100%;
   max-width: var(--content-max-width);
@@ -413,6 +418,17 @@
 
   .user-profile__details {
     display: none;
+  }
+
+  .user-profile--loading .user-profile__avatar,
+  .user-profile--unavailable .user-profile__avatar {
+    display: none;
+  }
+
+  .user-profile--loading .user-profile__details,
+  .user-profile--unavailable .user-profile__details {
+    display: flex;
+    max-width: 110px;
   }
 
   .notification-button__indicator {

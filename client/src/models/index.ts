@@ -25,6 +25,7 @@ export type {
   DocumentCategory,
   DocumentStatus,
 } from './document'
+export type { CurrentUser } from './currentUser'
 export type {
   AppRoute,
   NavigationIconName,

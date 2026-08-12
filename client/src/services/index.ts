@@ -1,5 +1,7 @@
 export { apiClient, getSafeApiErrorMessage } from './apiClient'
 export type { ApiRequestOptions } from './apiClient'
+export { currentUserService } from './currentUserService'
+export type { CurrentUserService } from './currentUserService'
 export { mockDataService } from './mockDataService'
 export type { MockDataService } from './mockDataService'
 export { systemService } from './systemService'
