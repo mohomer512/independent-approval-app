@@ -30,4 +30,5 @@ export type {
   NavigationIconName,
   NavigationItem,
 } from './navigation'
+export type { SystemInfo } from './systemInfo'
 export type { AppUser, UserAccountStatus, UserRole } from './user'

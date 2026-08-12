@@ -1,8 +1,10 @@
-import { Button, Card } from '@fluentui/react-components'
+import { Badge, Button, Card, Spinner } from '@fluentui/react-components'
 import {
+  ArrowClockwise20Regular,
   ArrowRight20Regular,
   Building20Regular,
   CheckmarkCircle24Regular,
+  DismissCircle24Regular,
   Flow24Regular,
   Form24Regular,
   People24Regular,
@@ -16,8 +18,27 @@ import {
   StatusBadge,
   SummaryCard,
 } from '../../components/common'
+import { useSystemInfo } from '../../hooks/useSystemInfo'
 import type { AdministrationIconName } from '../../models'
 import { mockDataService } from '../../services'
+
+const systemTimestampFormatter = new Intl.DateTimeFormat(undefined, {
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  month: 'short',
+  second: '2-digit',
+  timeZone: 'UTC',
+  timeZoneName: 'short',
+  year: 'numeric',
+})
+
+function formatSystemTimestamp(value: string): string {
+  const timestamp = new Date(value)
+  return Number.isNaN(timestamp.getTime())
+    ? 'Unavailable'
+    : systemTimestampFormatter.format(timestamp)
+}
 
 function getAreaIcon(iconName: AdministrationIconName): ReactNode {
   switch (iconName) {
@@ -48,6 +69,17 @@ function getMetricIcon(metricId: string): ReactNode {
 export function AdministrationPage() {
   const overview = mockDataService.getAdministrationOverview()
   const areas = mockDataService.getAdministrationAreas()
+  const { data: systemInfo, loading, error, retry } = useSystemInfo()
+  const connectionStatus = loading
+    ? 'Loading'
+    : systemInfo
+      ? 'Connected'
+      : 'Unavailable'
+  const connectionColor = loading
+    ? 'informative'
+    : systemInfo
+      ? 'success'
+      : 'danger'
 
   return (
     <div className="administration-page page-stack">
@@ -69,6 +101,75 @@ export function AdministrationPage() {
           />
         ))}
       </section>
+
+      <SectionPanel
+        title="System Information"
+        description="Live deployment details reported by the independent ASP.NET API."
+        action={
+          <div className="system-information__connection">
+            <span className="system-information__connection-label">
+              API connection status
+            </span>
+            <Badge
+              appearance="tint"
+              color={connectionColor}
+              aria-label={`API connection status: ${connectionStatus}`}
+            >
+              {connectionStatus}
+            </Badge>
+          </div>
+        }
+      >
+        <div className="system-information" aria-busy={loading}>
+          {loading ? (
+            <div className="system-information__loading" role="status">
+              <Spinner size="small" label="Connecting to the API" />
+              <p>Requesting live system details.</p>
+            </div>
+          ) : systemInfo ? (
+            <dl className="system-information__grid">
+              <div className="system-information__item">
+                <dt>Application name</dt>
+                <dd>{systemInfo.applicationName}</dd>
+              </div>
+              <div className="system-information__item">
+                <dt>Version</dt>
+                <dd>{systemInfo.version}</dd>
+              </div>
+              <div className="system-information__item">
+                <dt>Environment</dt>
+                <dd>{systemInfo.environment}</dd>
+              </div>
+              <div className="system-information__item">
+                <dt>UTC timestamp</dt>
+                <dd>
+                  <time dateTime={systemInfo.currentUtcTimestamp}>
+                    {formatSystemTimestamp(systemInfo.currentUtcTimestamp)}
+                  </time>
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <div className="system-information__unavailable" role="alert">
+              <div className="system-information__unavailable-icon" aria-hidden="true">
+                <DismissCircle24Regular />
+              </div>
+              <div className="system-information__unavailable-copy">
+                <h3>System information is unavailable</h3>
+                <p>{error ?? 'The API could not be reached. Please try again.'}</p>
+              </div>
+              <Button
+                type="button"
+                appearance="primary"
+                icon={<ArrowClockwise20Regular />}
+                onClick={retry}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+        </div>
+      </SectionPanel>
 
       <SectionPanel
         title="Configuration areas"
