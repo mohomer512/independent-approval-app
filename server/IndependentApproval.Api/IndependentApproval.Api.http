@@ -1,5 +1,10 @@
 @IndependentApproval.Api_HostAddress = https://localhost:7074
 
+GET {{IndependentApproval.Api_HostAddress}}/api/auth/me
+Accept: application/json
+
+###
+
 GET {{IndependentApproval.Api_HostAddress}}/api/system/info
 Accept: application/json
 

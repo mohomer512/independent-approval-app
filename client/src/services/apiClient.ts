@@ -70,12 +70,15 @@ async function requestJson<T>(
   }
 }
 
-export function getSafeApiErrorMessage(error: unknown): string {
+export function getSafeApiErrorMessage(
+  error: unknown,
+  fallbackMessage = 'System information is unavailable. Please try again.',
+): string {
   if (error instanceof ApiError) {
     return error.message
   }
 
-  return 'System information is unavailable. Please try again.'
+  return fallbackMessage
 }
 
 export const apiClient = {

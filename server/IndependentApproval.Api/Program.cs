@@ -1,4 +1,5 @@
 using IndependentApproval.Api.Infrastructure;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 
 const string DevClientCorsPolicy = "DevClient";
 const string DevClientOriginsConfigurationKey = "Cors:DevClient:AllowedOrigins";
@@ -6,6 +7,10 @@ const string DevClientOriginsConfigurationKey = "Cors:DevClient:AllowedOrigins";
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services
+    .AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+    .AddNegotiate();
+builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -51,6 +56,9 @@ if (app.Environment.IsDevelopment())
     app.UseCors(DevClientCorsPolicy);
     app.MapOpenApi();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");

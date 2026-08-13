@@ -3,7 +3,6 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Outlet, useLocation } from 'react-router'
 import { getPageTitle } from '../../app/navigation'
-import { mockDataService } from '../../services'
 import { NavigationSidebar } from './NavigationSidebar'
 import { TopHeader } from './TopHeader'
 
@@ -14,7 +13,6 @@ export function AppLayout() {
   const navigationTriggerRef = useRef<HTMLElement | null>(null)
   const location = useLocation()
   const pageTitle = getPageTitle(location.pathname)
-  const currentUser = mockDataService.getCurrentUser()
 
   useEffect(() => {
     if (isMobileNavigationOpen) {
@@ -111,7 +109,6 @@ export function AppLayout() {
       <div className="app-shell__content">
         <TopHeader
           pageTitle={pageTitle}
-          user={currentUser}
           onOpenNavigation={openMobileNavigation}
         />
         <main className="page-content" id="main-content">
