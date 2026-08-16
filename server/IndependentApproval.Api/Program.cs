@@ -50,6 +50,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
@@ -62,5 +64,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapFallbackToFile(
+    "{*path:regex(^(?!(api|health)($|/)).*):nonfile}",
+    "index.html");
 
 app.Run();
