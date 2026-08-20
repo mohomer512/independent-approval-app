@@ -17,7 +17,7 @@ const apiBaseUrl = configuredBaseUrl.replace(/\/+$/, '')
 
 function createApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${apiBaseUrl}${normalizedPath}`
+  return apiBaseUrl ? `${apiBaseUrl}${normalizedPath}` : normalizedPath
 }
 
 function getHttpErrorMessage(status: number): string {

@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ClientAppRoot>$(MSBuildProjectDirectory)\..\..\client\</ClientAppRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,5 +12,22 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
+
+  <Target Name="PublishClientApp"
+          AfterTargets="ComputeFilesToPublish"
+          Condition="'$(Configuration)' == 'Release'">
+    <Exec WorkingDirectory="$(ClientAppRoot)" Command="npm ci" />
+    <Exec WorkingDirectory="$(ClientAppRoot)" Command="npm run build" />
+
+    <ItemGroup>
+      <ClientDistFiles Include="$(ClientAppRoot)dist\**\*" />
+      <ResolvedFileToPublish Include="@(ClientDistFiles->'%(FullPath)')"
+                             Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>
