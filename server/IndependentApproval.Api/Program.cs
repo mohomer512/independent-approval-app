@@ -1,12 +1,23 @@
 using IndependentApproval.Api.Infrastructure;
+using IndependentApproval.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.EntityFrameworkCore;
 
 const string DevClientCorsPolicy = "DevClient";
 const string DevClientOriginsConfigurationKey = "Cors:DevClient:AllowedOrigins";
+const string DatabaseConnectionStringName = "IndependentApprovalDatabase";
 
 var builder = WebApplication.CreateBuilder(args);
 
+var databaseConnectionString = builder.Configuration.GetConnectionString(DatabaseConnectionStringName)
+    ?? throw new InvalidOperationException(
+        $"Connection string '{DatabaseConnectionStringName}' is not configured.");
+
 builder.Services.AddControllers();
+builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
+    options.UseSqlServer(
+        databaseConnectionString,
+        sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()));
 builder.Services
     .AddAuthentication(NegotiateDefaults.AuthenticationScheme)
     .AddNegotiate();
