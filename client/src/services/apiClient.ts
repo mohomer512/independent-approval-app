@@ -207,6 +207,27 @@ async function requestJson<T>(
   }
 }
 
+async function requestBlob(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<Blob> {
+  const response = await sendRequest(path, 'GET', options)
+
+  if (!response.ok) {
+    throw new ApiError(getHttpErrorMessage(response.status), response.status)
+  }
+
+  try {
+    return await response.blob()
+  } catch (error: unknown) {
+    if (options.signal?.aborted) {
+      throw error
+    }
+
+    throw new ApiError('The API returned an invalid response. Please try again.')
+  }
+}
+
 export function getSafeApiErrorMessage(
   error: unknown,
   fallbackMessage = 'System information is unavailable. Please try again.',
@@ -221,6 +242,8 @@ export function getSafeApiErrorMessage(
 export const apiClient = {
   get: <T>(path: string, options?: ApiRequestOptions) =>
     requestJson<T>(path, 'GET', options),
+  getBlob: (path: string, options?: ApiRequestOptions) =>
+    requestBlob(path, options),
   post: <T>(path: string, options?: ApiRequestBodyOptions) =>
     requestJson<T>(path, 'POST', options),
   put: <T>(path: string, options?: ApiRequestBodyOptions) =>

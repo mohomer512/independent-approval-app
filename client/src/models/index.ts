@@ -6,6 +6,7 @@ export type {
   AdministrationOverview,
 } from './administration'
 export type { AntiforgeryToken } from './antiforgeryToken'
+export type { ApiDocument, DocumentListResponse } from './apiDocument'
 export type {
   ApprovalRequest,
   RequestCategory,
