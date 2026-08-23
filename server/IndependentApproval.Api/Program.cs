@@ -1,7 +1,11 @@
+using IndependentApproval.Api.Application.Documents;
 using IndependentApproval.Api.Infrastructure;
 using IndependentApproval.Api.Infrastructure.Persistence;
+using IndependentApproval.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 const string DevClientCorsPolicy = "DevClient";
 const string DevClientOriginsConfigurationKey = "Cors:DevClient:AllowedOrigins";
@@ -14,6 +18,18 @@ var databaseConnectionString = builder.Configuration.GetConnectionString(Databas
         $"Connection string '{DatabaseConnectionStringName}' is not configured.");
 
 builder.Services.AddControllers();
+builder.Services
+    .AddOptions<DocumentStorageOptions>()
+    .BindConfiguration(DocumentStorageOptions.SectionName)
+    .PostConfigure(options => options.NormalizeAllowedExtensions())
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<DocumentStorageOptions>, DocumentStorageOptionsValidator>();
+builder.Services.Configure<FormOptions>(options =>
+    options.MultipartBodyLengthLimit = DocumentStorageOptions.MultipartBodyLengthLimitBytes);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IDocumentStorage, FileSystemDocumentStorage>();
+builder.Services.AddHostedService<DevelopmentDocumentStorageInitializer>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
     options.UseSqlServer(
         databaseConnectionString,
