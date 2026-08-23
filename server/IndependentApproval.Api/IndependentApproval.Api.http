@@ -5,6 +5,37 @@ Accept: application/json
 
 ###
 
+# @name antiforgery
+GET {{IndependentApproval.Api_HostAddress}}/api/security/antiforgery-token
+Accept: application/json
+
+###
+
+# Run the antiforgery request first. The HTTP client must retain its Set-Cookie
+# value for this request; only the JSON requestToken is copied into the header.
+POST {{IndependentApproval.Api_HostAddress}}/api/documents
+Accept: application/json
+X-CSRF-TOKEN: {{antiforgery.response.body.$.requestToken}}
+Content-Type: multipart/form-data; boundary=IndependentApprovalBoundary
+
+--IndependentApprovalBoundary
+Content-Disposition: form-data; name="File"; filename="antiforgery-test.txt"
+Content-Type: text/plain
+
+Antiforgery-protected document upload test.
+--IndependentApprovalBoundary
+Content-Disposition: form-data; name="Description"
+
+Uploaded from IndependentApproval.Api.http
+--IndependentApprovalBoundary--
+
+###
+
+GET {{IndependentApproval.Api_HostAddress}}/api/documents
+Accept: application/json
+
+###
+
 GET {{IndependentApproval.Api_HostAddress}}/api/system/info
 Accept: application/json
 

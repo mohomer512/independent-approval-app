@@ -1,5 +1,26 @@
+import type { AntiforgeryToken } from '../models'
+import { antiforgeryService } from './antiforgeryService'
+
 export interface ApiRequestOptions {
   readonly signal?: AbortSignal
+  readonly headers?: HeadersInit
+}
+
+export interface ApiRequestBodyOptions extends ApiRequestOptions {
+  readonly body?: XMLHttpRequestBodyInit | null
+}
+
+type ApiHttpMethod =
+  | 'GET'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+
+interface ApiFetchOptions extends ApiRequestBodyOptions {
+  readonly cache?: RequestCache
 }
 
 class ApiError extends Error {
@@ -14,6 +35,15 @@ class ApiError extends Error {
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? ''
 const apiBaseUrl = configuredBaseUrl.replace(/\/+$/, '')
+const antiforgeryHeaderName = 'X-CSRF-TOKEN'
+const antiforgeryTokenPath = '/api/security/antiforgery-token'
+const antiforgeryValidationProblemType =
+  'urn:independent-approval:problem:antiforgery-validation'
+const safeHttpMethods: ReadonlySet<ApiHttpMethod> = new Set([
+  'GET',
+  'HEAD',
+  'OPTIONS',
+])
 
 function createApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
@@ -32,19 +62,44 @@ function getHttpErrorMessage(status: number): string {
   return 'The API request could not be completed. Please try again.'
 }
 
-async function requestJson<T>(
-  path: string,
-  options: ApiRequestOptions = {},
-): Promise<T> {
-  let response: Response
+function isUnsafeMethod(method: ApiHttpMethod): boolean {
+  return !safeHttpMethods.has(method)
+}
 
+function createRequestHeaders(
+  method: ApiHttpMethod,
+  configuredHeaders?: HeadersInit,
+  requestToken?: string,
+): Headers {
+  const headers = new Headers(configuredHeaders)
+
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json')
+  }
+
+  if (isUnsafeMethod(method) && requestToken !== undefined) {
+    headers.set(antiforgeryHeaderName, requestToken)
+  } else {
+    headers.delete(antiforgeryHeaderName)
+  }
+
+  return headers
+}
+
+async function sendRequest(
+  path: string,
+  method: ApiHttpMethod,
+  options: ApiFetchOptions,
+  requestToken?: string,
+): Promise<Response> {
   try {
-    response = await fetch(createApiUrl(path), {
-      headers: {
-        Accept: 'application/json',
-      },
+    return await fetch(createApiUrl(path), {
+      method,
+      headers: createRequestHeaders(method, options.headers, requestToken),
+      body: options.body,
       credentials: 'include',
       signal: options.signal,
+      cache: options.cache,
     })
   } catch (error: unknown) {
     if (options.signal?.aborted) {
@@ -53,6 +108,88 @@ async function requestJson<T>(
 
     throw new ApiError('Unable to connect to the API. Please try again.')
   }
+}
+
+function isAntiforgeryToken(value: unknown): value is AntiforgeryToken {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'requestToken' in value &&
+    typeof value.requestToken === 'string' &&
+    value.requestToken.trim().length > 0
+  )
+}
+
+async function acquireAntiforgeryToken(): Promise<string> {
+  const responseBody = await requestJson<unknown>(
+    antiforgeryTokenPath,
+    'GET',
+    { cache: 'no-store' },
+  )
+
+  if (!isAntiforgeryToken(responseBody)) {
+    throw new ApiError('The API returned an invalid response. Please try again.')
+  }
+
+  return responseBody.requestToken
+}
+
+async function isAntiforgeryValidationFailure(
+  response: Response,
+): Promise<boolean> {
+  if (response.status !== 400) {
+    return false
+  }
+
+  try {
+    const responseBody: unknown = await response.clone().json()
+
+    return (
+      typeof responseBody === 'object' &&
+      responseBody !== null &&
+      'type' in responseBody &&
+      responseBody.type === antiforgeryValidationProblemType
+    )
+  } catch {
+    return false
+  }
+}
+
+async function sendUnsafeRequest(
+  path: string,
+  method: ApiHttpMethod,
+  options: ApiFetchOptions,
+): Promise<Response> {
+  let requestToken = await antiforgeryService.getRequestToken(
+    acquireAntiforgeryToken,
+  )
+  let response = await sendRequest(path, method, options, requestToken)
+
+  if (!(await isAntiforgeryValidationFailure(response))) {
+    return response
+  }
+
+  antiforgeryService.invalidateRequestToken(requestToken)
+  requestToken = await antiforgeryService.getRequestToken(
+    acquireAntiforgeryToken,
+  )
+  response = await sendRequest(path, method, options, requestToken)
+
+  if (await isAntiforgeryValidationFailure(response)) {
+    antiforgeryService.invalidateRequestToken(requestToken)
+  }
+
+  return response
+}
+
+async function requestJson<T>(
+  path: string,
+  method: ApiHttpMethod,
+  options: ApiFetchOptions = {},
+): Promise<T> {
+  const response = isUnsafeMethod(method)
+    ? await sendUnsafeRequest(path, method, options)
+    : await sendRequest(path, method, options)
 
   if (!response.ok) {
     throw new ApiError(getHttpErrorMessage(response.status), response.status)
@@ -83,5 +220,13 @@ export function getSafeApiErrorMessage(
 
 export const apiClient = {
   get: <T>(path: string, options?: ApiRequestOptions) =>
-    requestJson<T>(path, options),
+    requestJson<T>(path, 'GET', options),
+  post: <T>(path: string, options?: ApiRequestBodyOptions) =>
+    requestJson<T>(path, 'POST', options),
+  put: <T>(path: string, options?: ApiRequestBodyOptions) =>
+    requestJson<T>(path, 'PUT', options),
+  patch: <T>(path: string, options?: ApiRequestBodyOptions) =>
+    requestJson<T>(path, 'PATCH', options),
+  delete: <T>(path: string, options?: ApiRequestBodyOptions) =>
+    requestJson<T>(path, 'DELETE', options),
 }

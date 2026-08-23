@@ -5,6 +5,7 @@ export type {
   AdministrationMetric,
   AdministrationOverview,
 } from './administration'
+export type { AntiforgeryToken } from './antiforgeryToken'
 export type {
   ApprovalRequest,
   RequestCategory,

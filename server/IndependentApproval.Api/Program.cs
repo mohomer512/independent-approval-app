@@ -4,6 +4,7 @@ using IndependentApproval.Api.Infrastructure.Persistence;
 using IndependentApproval.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -17,7 +18,25 @@ var databaseConnectionString = builder.Configuration.GetConnectionString(Databas
     ?? throw new InvalidOperationException(
         $"Connection string '{DatabaseConnectionStringName}' is not configured.");
 
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AntiforgeryValidationProblemDetailsFilter());
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.SuppressReadingTokenFromFormBody = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Path = "/";
+    options.Cookie.SameSite = builder.Environment.IsDevelopment()
+        ? SameSiteMode.None
+        : SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
+});
 builder.Services
     .AddOptions<DocumentStorageOptions>()
     .BindConfiguration(DocumentStorageOptions.SectionName)
