@@ -3,8 +3,18 @@ export type {
   AntiforgeryService,
   AntiforgeryTokenProvider,
 } from './antiforgeryService'
-export { apiClient, getSafeApiErrorMessage } from './apiClient'
-export type { ApiRequestBodyOptions, ApiRequestOptions } from './apiClient'
+export { adminRoleService } from './adminRoleService'
+export type { AdminRoleService } from './adminRoleService'
+export { adminUserService } from './adminUserService'
+export type { AdminUserService } from './adminUserService'
+export { administrationSummaryService } from './administrationSummaryService'
+export type { AdministrationSummaryService } from './administrationSummaryService'
+export { ApiError, apiClient, getSafeApiErrorMessage } from './apiClient'
+export type {
+  ApiProblemDetails,
+  ApiRequestBodyOptions,
+  ApiRequestOptions,
+} from './apiClient'
 export { currentUserService } from './currentUserService'
 export type { CurrentUserService } from './currentUserService'
 export { documentService } from './documentService'

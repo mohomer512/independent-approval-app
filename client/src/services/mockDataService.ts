@@ -1,5 +1,4 @@
 import {
-  administrationOverview,
   approvalDocuments,
   approvalRequests,
   approvalTasks,
@@ -10,8 +9,6 @@ import {
   quickActions,
 } from '../mocks'
 import type {
-  AdministrationArea,
-  AdministrationOverview,
   AppUser,
   ApprovalDocument,
   ApprovalRequest,
@@ -36,9 +33,6 @@ export interface MockDataService {
   readonly getTaskById: (id: string) => ApprovalTask | undefined
   readonly getDocuments: () => readonly ApprovalDocument[]
   readonly getDocumentById: (id: string) => ApprovalDocument | undefined
-  readonly getAdministrationOverview: () => AdministrationOverview
-  readonly getAdministrationAreas: () => readonly AdministrationArea[]
-  readonly getAdministrationModules: () => readonly AdministrationArea[]
 }
 
 export const mockDataService: MockDataService = {
@@ -60,7 +54,4 @@ export const mockDataService: MockDataService = {
   getDocuments: () => approvalDocuments,
   getDocumentById: (id) =>
     approvalDocuments.find((document) => document.id === id),
-  getAdministrationOverview: () => administrationOverview,
-  getAdministrationAreas: () => administrationOverview.areas,
-  getAdministrationModules: () => administrationOverview.areas,
 }

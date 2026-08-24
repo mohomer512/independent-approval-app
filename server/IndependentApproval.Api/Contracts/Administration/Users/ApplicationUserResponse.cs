@@ -1,0 +1,26 @@
+namespace IndependentApproval.Api.Contracts.Administration.Users;
+
+public sealed record ApplicationUserResponse(
+    Guid Id,
+    string AccountName,
+    string Domain,
+    string UserName,
+    string? UserPrincipalName,
+    string? Email,
+    string DisplayName,
+    bool IsActive,
+    bool IsLocked,
+    string? LockReason,
+    bool IsRemoved,
+    bool IsProtectedSystemAdministrator,
+    IReadOnlyList<RoleReferenceResponse> Roles,
+    DateTimeOffset? LastSuccessfulAccessAtUtc,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    DateTimeOffset? LockedAtUtc,
+    string? LockedByAccount,
+    DateTimeOffset? RemovedAtUtc,
+    string? RemovedByAccount,
+    string RowVersion);

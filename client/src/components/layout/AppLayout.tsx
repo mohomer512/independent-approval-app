@@ -69,7 +69,6 @@ export function AppLayout() {
   return (
     <div
       className={`app-shell${isSidebarCollapsed ? ' app-shell--collapsed' : ''}`}
-      dir="ltr"
     >
       <a className="skip-link" href="#main-content">
         Skip to main content

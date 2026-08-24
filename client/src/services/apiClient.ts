@@ -8,6 +8,7 @@ export interface ApiRequestOptions {
 
 export interface ApiRequestBodyOptions extends ApiRequestOptions {
   readonly body?: XMLHttpRequestBodyInit | null
+  readonly json?: unknown
 }
 
 type ApiHttpMethod =
@@ -23,13 +24,33 @@ interface ApiFetchOptions extends ApiRequestBodyOptions {
   readonly cache?: RequestCache
 }
 
-class ApiError extends Error {
-  readonly status: number | undefined
+export interface ApiProblemDetails {
+  readonly type?: string
+  readonly title?: string
+  readonly status?: number
+  readonly detail?: string
+  readonly instance?: string
+  readonly code?: string
+  readonly errors: Readonly<Record<string, readonly string[]>>
+}
 
-  constructor(message: string, status?: number) {
+export class ApiError extends Error {
+  readonly status: number | undefined
+  readonly code: string | undefined
+  readonly errors: Readonly<Record<string, readonly string[]>>
+  readonly problemDetails: ApiProblemDetails | null
+
+  constructor(
+    message: string,
+    status?: number,
+    problemDetails: ApiProblemDetails | null = null,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = problemDetails?.code
+    this.errors = problemDetails?.errors ?? {}
+    this.problemDetails = problemDetails
   }
 }
 
@@ -67,12 +88,20 @@ function getHttpErrorMessage(status: number): string {
     return 'Your Windows session could not be authenticated. Refresh the page and try again.'
   }
 
+  if (status === 403) {
+    return 'You do not have permission to perform this action.'
+  }
+
   if (status === 404) {
     return 'The requested API resource is unavailable.'
   }
 
   if (status === 400) {
     return 'The API rejected the request. Check the supplied values and try again.'
+  }
+
+  if (status === 409) {
+    return 'This information changed or the requested action is no longer allowed. Reload and try again.'
   }
 
   return 'The API request could not be completed. Please try again.'
@@ -102,6 +131,25 @@ function createRequestHeaders(
   return headers
 }
 
+function createRequestBody(
+  options: ApiRequestBodyOptions,
+  headers: Headers,
+): XMLHttpRequestBodyInit | null | undefined {
+  if (options.json === undefined) {
+    return options.body
+  }
+
+  if (options.body !== undefined) {
+    throw new ApiError('The API request body is configured more than once.')
+  }
+
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  return JSON.stringify(options.json)
+}
+
 async function sendRequest(
   path: string,
   method: ApiHttpMethod,
@@ -109,10 +157,16 @@ async function sendRequest(
   requestToken?: string,
 ): Promise<Response> {
   try {
+    const headers = createRequestHeaders(
+      method,
+      options.headers,
+      requestToken,
+    )
+
     return await fetch(createApiUrl(path), {
       method,
-      headers: createRequestHeaders(method, options.headers, requestToken),
-      body: options.body,
+      headers,
+      body: createRequestBody(options, headers),
       credentials: 'include',
       signal: options.signal,
       cache: options.cache,
@@ -122,8 +176,106 @@ async function sendRequest(
       throw error
     }
 
+    if (error instanceof ApiError) {
+      throw error
+    }
+
     throw new ApiError('Unable to connect to the API. Please try again.')
   }
+}
+
+function readOptionalString(
+  value: Readonly<Record<string, unknown>>,
+  propertyName: string,
+): string | undefined {
+  const propertyValue = value[propertyName]
+  return typeof propertyValue === 'string' && propertyValue.trim().length > 0
+    ? propertyValue
+    : undefined
+}
+
+function readProblemErrors(
+  value: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, readonly string[]>> {
+  const errorsValue = value.errors
+
+  if (
+    typeof errorsValue !== 'object' ||
+    errorsValue === null ||
+    Array.isArray(errorsValue)
+  ) {
+    return {}
+  }
+
+  const errors: Record<string, readonly string[]> = {}
+
+  Object.entries(errorsValue).forEach(([fieldName, messages]) => {
+    if (!Array.isArray(messages)) {
+      return
+    }
+
+    const safeMessages = messages.filter(
+      (message): message is string =>
+        typeof message === 'string' && message.trim().length > 0,
+    )
+
+    if (safeMessages.length > 0) {
+      errors[fieldName] = safeMessages
+    }
+  })
+
+  return errors
+}
+
+async function readProblemDetails(
+  response: Response,
+): Promise<ApiProblemDetails | null> {
+  try {
+    const responseBody: unknown = await response.clone().json()
+
+    if (
+      typeof responseBody !== 'object' ||
+      responseBody === null ||
+      Array.isArray(responseBody)
+    ) {
+      return null
+    }
+
+    const problemRecord = responseBody as Readonly<Record<string, unknown>>
+    const problemStatus = problemRecord.status
+
+    return {
+      type: readOptionalString(problemRecord, 'type'),
+      title: readOptionalString(problemRecord, 'title'),
+      status: typeof problemStatus === 'number' ? problemStatus : undefined,
+      detail: readOptionalString(problemRecord, 'detail'),
+      instance: readOptionalString(problemRecord, 'instance'),
+      code: readOptionalString(problemRecord, 'code'),
+      errors: readProblemErrors(problemRecord),
+    }
+  } catch {
+    return null
+  }
+}
+
+function getProblemMessage(
+  status: number,
+  problemDetails: ApiProblemDetails | null,
+): string {
+  if (status < 500) {
+    const detail = problemDetails?.detail?.trim()
+    const title = problemDetails?.title?.trim()
+
+    if (detail) {
+      return detail
+    }
+
+    if (title) {
+      return title
+    }
+  }
+
+  return getHttpErrorMessage(status)
 }
 
 function isAntiforgeryToken(value: unknown): value is AntiforgeryToken {
@@ -158,14 +310,8 @@ async function isAntiforgeryValidationFailure(
   }
 
   try {
-    const responseBody: unknown = await response.clone().json()
-
-    return (
-      typeof responseBody === 'object' &&
-      responseBody !== null &&
-      'type' in responseBody &&
-      responseBody.type === antiforgeryValidationProblemType
-    )
+    const problemDetails = await readProblemDetails(response)
+    return problemDetails?.type === antiforgeryValidationProblemType
   } catch {
     return false
   }
@@ -208,7 +354,16 @@ async function requestJson<T>(
     : await sendRequest(path, method, options)
 
   if (!response.ok) {
-    throw new ApiError(getHttpErrorMessage(response.status), response.status)
+    const problemDetails = await readProblemDetails(response)
+    throw new ApiError(
+      getProblemMessage(response.status, problemDetails),
+      response.status,
+      problemDetails,
+    )
+  }
+
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T
   }
 
   try {
@@ -230,7 +385,12 @@ async function requestBlob(
   const response = await sendRequest(path, 'GET', options)
 
   if (!response.ok) {
-    throw new ApiError(getHttpErrorMessage(response.status), response.status)
+    const problemDetails = await readProblemDetails(response)
+    throw new ApiError(
+      getProblemMessage(response.status, problemDetails),
+      response.status,
+      problemDetails,
+    )
   }
 
   try {

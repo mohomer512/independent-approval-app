@@ -22,6 +22,449 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ArchivedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ArchivedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("ArchivedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("CreatedByAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DescriptionArabic")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DescriptionEnglish")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("ModifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("ModifiedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NormalizedCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchivedByUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.HasIndex("NormalizedCode")
+                        .IsUnique();
+
+                    b.HasIndex("IsArchived", "IsActive");
+
+                    b.ToTable("ApplicationRoles", "app", t =>
+                        {
+                            t.HasCheckConstraint("CK_ApplicationRoles_ArchivedInactive", "[IsArchived] = 0 OR [IsActive] = 0");
+                        });
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("AdObjectGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("AdSid")
+                        .IsRequired()
+                        .HasColumnType("varbinary(68)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("CreatedByAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsRemoved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("LastSuccessfulAccessAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LockReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset?>("LockedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LockedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("LockedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ModifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("ModifiedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NormalizedAccountName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset?>("RemovedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("RemovedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("RemovedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SamAccountName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserPrincipalName")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdObjectGuid")
+                        .IsUnique()
+                        .HasFilter("[AdObjectGuid] IS NOT NULL");
+
+                    b.HasIndex("AdSid")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("LockedByUserId");
+
+                    b.HasIndex("ModifiedByUserId");
+
+                    b.HasIndex("NormalizedAccountName")
+                        .IsUnique();
+
+                    b.HasIndex("RemovedByUserId");
+
+                    b.HasIndex("IsRemoved", "IsActive", "IsLocked");
+
+                    b.ToTable("ApplicationUsers", "app");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationUserRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicationRoleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("AssignedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("AssignedByAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("AssignedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("RemovedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("RemovedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("RemovedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedByUserId");
+
+                    b.HasIndex("RemovedByUserId");
+
+                    b.HasIndex("ApplicationRoleId", "RemovedAtUtc");
+
+                    b.HasIndex("ApplicationUserId", "ApplicationRoleId")
+                        .IsUnique();
+
+                    b.ToTable("ApplicationUserRoles", "app");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DescriptionArabic")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DescriptionEnglish")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Permissions", "app");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1001"),
+                            Code = "APPLICATION.ACCESS",
+                            DescriptionArabic = "الوصول إلى التطبيق بعد مصادقة Windows.",
+                            DescriptionEnglish = "Access the application after Windows authentication.",
+                            NameArabic = "الوصول إلى التطبيق",
+                            NameEnglish = "Access application"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1002"),
+                            Code = "REQUESTS.START",
+                            DescriptionArabic = "إنشاء الطلبات وإرسالها ضمن سير عمل مسموح.",
+                            DescriptionEnglish = "Create and submit requests for an allowed workflow.",
+                            NameArabic = "بدء الطلبات",
+                            NameEnglish = "Start requests"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1003"),
+                            Code = "TASKS.PROCESS_ASSIGNED",
+                            DescriptionArabic = "معالجة مهام سير العمل المسندة إلى أدوار المستخدم.",
+                            DescriptionEnglish = "Process workflow tasks assigned to the user's roles.",
+                            NameArabic = "معالجة المهام المسندة",
+                            NameEnglish = "Process assigned tasks"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1004"),
+                            Code = "REQUESTS.VIEW_ALLOWED",
+                            DescriptionArabic = "عرض الطلبات التي تسمح بها قواعد سير العمل والأدوار.",
+                            DescriptionEnglish = "View requests allowed by workflow and role rules.",
+                            NameArabic = "عرض الطلبات المسموح بها",
+                            NameEnglish = "View allowed requests"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1005"),
+                            Code = "DOCUMENTS.MANAGE",
+                            DescriptionArabic = "رفع المستندات وفتحها وإدارتها عندما تسمح قواعد سير العمل بذلك.",
+                            DescriptionEnglish = "Upload, open and manage documents when workflow rules allow it.",
+                            NameArabic = "إدارة المستندات",
+                            NameEnglish = "Manage documents"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8fcb6c1-8b0a-4ee5-a0cf-726df70a1006"),
+                            Code = "ADMINISTRATION.VIEW",
+                            DescriptionArabic = "عرض معلومات الإدارة دون منح صلاحية مسؤول النظام.",
+                            DescriptionEnglish = "View administration information without granting system administrator access.",
+                            NameArabic = "عرض الإدارة",
+                            NameEnglish = "View administration"
+                        });
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicationRoleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("GrantedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("GrantedByAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("GrantedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("RemovedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("RemovedByAccount")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid?>("RemovedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GrantedByUserId");
+
+                    b.HasIndex("RemovedByUserId");
+
+                    b.HasIndex("ApplicationRoleId", "PermissionId")
+                        .IsUnique();
+
+                    b.HasIndex("PermissionId", "RemovedAtUtc");
+
+                    b.ToTable("RolePermissions", "app");
+                });
+
             modelBuilder.Entity("IndependentApproval.Api.Domain.Documents.DocumentRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -83,6 +526,122 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                     b.HasIndex("UploadedBy");
 
                     b.ToTable("Documents", "app");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationRole", b =>
+                {
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ArchivedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationUser", b =>
+                {
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("LockedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RemovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationUserRole", b =>
+                {
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationRole", "ApplicationRole")
+                        .WithMany("UserAssignments")
+                        .HasForeignKey("ApplicationRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", "ApplicationUser")
+                        .WithMany("RoleAssignments")
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RemovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ApplicationRole");
+
+                    b.Navigation("ApplicationUser");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.RolePermission", b =>
+                {
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationRole", "ApplicationRole")
+                        .WithMany("PermissionAssignments")
+                        .HasForeignKey("ApplicationRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("GrantedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.Permission", "Permission")
+                        .WithMany("RoleAssignments")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RemovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ApplicationRole");
+
+                    b.Navigation("Permission");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationRole", b =>
+                {
+                    b.Navigation("PermissionAssignments");
+
+                    b.Navigation("UserAssignments");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationUser", b =>
+                {
+                    b.Navigation("RoleAssignments");
+                });
+
+            modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.Permission", b =>
+                {
+                    b.Navigation("RoleAssignments");
                 });
 #pragma warning restore 612, 618
         }

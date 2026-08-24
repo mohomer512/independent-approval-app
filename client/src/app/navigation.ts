@@ -13,6 +13,7 @@ export interface NavigationItem {
   readonly path: string
   readonly icon: FluentIcon
   readonly end?: boolean
+  readonly systemAdministratorOnly?: boolean
 }
 
 export const navigationItems: readonly NavigationItem[] = [
@@ -38,12 +39,33 @@ export const navigationItems: readonly NavigationItem[] = [
     label: 'Administration',
     path: '/administration',
     icon: Settings24Regular,
+    systemAdministratorOnly: true,
   },
 ]
 
 export const getPageTitle = (pathname: string): string => {
   if (pathname === '/requests/new') {
     return 'New Request'
+  }
+
+  if (pathname.startsWith('/administration/users')) {
+    return 'Users'
+  }
+
+  if (pathname.startsWith('/administration/roles')) {
+    return 'Roles and permissions'
+  }
+
+  if (pathname.startsWith('/administration/request-types')) {
+    return 'Request types'
+  }
+
+  if (pathname.startsWith('/administration/workflows')) {
+    return 'Approval workflows'
+  }
+
+  if (pathname.startsWith('/administration/settings')) {
+    return 'System settings'
   }
 
   const matchingItem = navigationItems.find((item) => item.path === pathname)

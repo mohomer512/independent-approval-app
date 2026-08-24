@@ -1,4 +1,3 @@
-export { administrationOverview } from './administration'
 export { currentUser } from './currentUser'
 export { dashboardData, dashboardMetrics, quickActions } from './dashboard'
 export { approvalDocuments } from './documents'

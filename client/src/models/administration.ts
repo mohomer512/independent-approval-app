@@ -12,23 +12,123 @@ export type AdministrationIconName =
   | 'form'
   | 'settings'
 
-export interface AdministrationArea {
-  readonly id: AdministrationAreaId
-  readonly title: string
-  readonly description: string
-  readonly icon: AdministrationIconName
-  readonly itemCount: number | null
-  readonly itemLabel: string | null
+export interface PagedResponse<T> {
+  readonly items: readonly T[]
+  readonly page: number
+  readonly pageSize: number
+  readonly totalCount: number
 }
 
-export interface AdministrationMetric {
+export interface AdministrationSummary {
+  readonly activeUserCount: number
+  readonly activeRoleCount: number
+  readonly publishedWorkflowCount: number
+  readonly activeRequestTypeCount: number
+}
+
+export interface RoleReference {
   readonly id: string
-  readonly label: string
-  readonly value: number
-  readonly description: string
+  readonly code: string
+  readonly nameEnglish: string
+  readonly nameArabic: string
+  readonly isArchived: boolean
 }
 
-export interface AdministrationOverview {
-  readonly metrics: readonly AdministrationMetric[]
-  readonly areas: readonly AdministrationArea[]
+export interface ApplicationUser {
+  readonly id: string
+  readonly accountName: string
+  readonly domain: string
+  readonly userName: string
+  readonly userPrincipalName: string | null
+  readonly email: string | null
+  readonly displayName: string
+  readonly isActive: boolean
+  readonly isLocked: boolean
+  readonly lockReason: string | null
+  readonly isRemoved: boolean
+  readonly isProtectedSystemAdministrator: boolean
+  readonly roles: readonly RoleReference[]
+  readonly lastSuccessfulAccessAtUtc: string | null
+  readonly createdAtUtc: string
+  readonly createdByAccount: string
+  readonly modifiedAtUtc: string | null
+  readonly modifiedByAccount: string | null
+  readonly lockedAtUtc: string | null
+  readonly lockedByAccount: string | null
+  readonly removedAtUtc: string | null
+  readonly removedByAccount: string | null
+  readonly rowVersion: string
+}
+
+export interface AdminUserListQuery {
+  readonly search?: string
+  readonly includeRemoved?: boolean
+  readonly page: number
+  readonly pageSize: number
+}
+
+export interface UpdateUserRolesRequest {
+  readonly roleIds: readonly string[]
+  readonly rowVersion: string
+}
+
+export interface LockUserRequest {
+  readonly reason: string
+  readonly rowVersion: string
+}
+
+export interface RowVersionRequest {
+  readonly rowVersion: string
+}
+
+export interface PermissionDefinition {
+  readonly code: string
+  readonly nameEnglish: string
+  readonly nameArabic: string
+  readonly descriptionEnglish: string
+  readonly descriptionArabic: string
+}
+
+export interface ApplicationRole {
+  readonly id: string
+  readonly code: string
+  readonly nameEnglish: string
+  readonly nameArabic: string
+  readonly descriptionEnglish: string | null
+  readonly descriptionArabic: string | null
+  readonly isActive: boolean
+  readonly isArchived: boolean
+  readonly permissionCodes: readonly string[]
+  readonly userCount: number
+  readonly createdAtUtc: string
+  readonly createdByAccount: string
+  readonly modifiedAtUtc: string | null
+  readonly modifiedByAccount: string | null
+  readonly rowVersion: string
+}
+
+export interface AdminRoleListQuery {
+  readonly search?: string
+  readonly includeArchived?: boolean
+  readonly page: number
+  readonly pageSize: number
+}
+
+export interface CreateRoleRequest {
+  readonly code: string
+  readonly nameEnglish: string
+  readonly nameArabic: string
+  readonly descriptionEnglish: string
+  readonly descriptionArabic: string
+  readonly permissionCodes: readonly string[]
+}
+
+export interface UpdateRoleRequest {
+  readonly nameEnglish: string
+  readonly nameArabic: string
+  readonly descriptionEnglish: string
+  readonly descriptionArabic: string
+  readonly isActive: boolean
+  readonly permissionCodes: readonly string[]
+  readonly rowVersion: string
 }

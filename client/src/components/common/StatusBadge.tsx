@@ -29,6 +29,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     case 'Rejected':
     case 'Cancelled':
     case 'Locked':
+    case 'Removed':
       return (
         <Badge className={className} appearance="tint" color="danger">
           {status}

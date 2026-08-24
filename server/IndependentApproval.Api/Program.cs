@@ -1,8 +1,12 @@
+using IndependentApproval.Api.Application.Administration;
+using IndependentApproval.Api.Application.Authorization;
 using IndependentApproval.Api.Application.Documents;
 using IndependentApproval.Api.Infrastructure;
 using IndependentApproval.Api.Infrastructure.Persistence;
 using IndependentApproval.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -43,12 +47,26 @@ builder.Services
     .PostConfigure(options => options.NormalizeAllowedExtensions())
     .ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<DocumentStorageOptions>, DocumentStorageOptionsValidator>();
+builder.Services
+    .AddOptions<ApplicationAuthorizationOptions>()
+    .BindConfiguration(ApplicationAuthorizationOptions.SectionName)
+    .ValidateOnStart();
+builder.Services.AddSingleton<
+    IValidateOptions<ApplicationAuthorizationOptions>,
+    ApplicationAuthorizationOptionsValidator>();
 builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = DocumentStorageOptions.MultipartBodyLengthLimitBytes);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IDocumentStorage, FileSystemDocumentStorage>();
 builder.Services.AddHostedService<DevelopmentDocumentStorageInitializer>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IApplicationAccessService, ApplicationAccessService>();
+builder.Services.AddScoped<IAdministrationActorAccessor, AdministrationActorAccessor>();
+builder.Services.AddScoped<
+    IApplicationUserAdministrationService,
+    ApplicationUserAdministrationService>();
+builder.Services.AddScoped<IRoleAdministrationService, RoleAdministrationService>();
+builder.Services.AddScoped<IAdministrationSummaryService, AdministrationSummaryService>();
 builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
     options.UseSqlServer(
         databaseConnectionString,
@@ -56,9 +74,27 @@ builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
 builder.Services
     .AddAuthentication(NegotiateDefaults.AuthenticationScheme)
     .AddNegotiate();
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, ApplicationUserAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, SystemAdministratorAuthorizationHandler>();
+builder.Services.AddSingleton<
+    IAuthorizationMiddlewareResultHandler,
+    AuthorizationProblemDetailsResultHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicyNames.ApplicationUser, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new ApplicationUserRequirement());
+    });
+    options.AddPolicy(AuthorizationPolicyNames.SystemAdministrator, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new SystemAdministratorRequirement());
+    });
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<AdministrationExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 if (builder.Environment.IsDevelopment())
@@ -115,3 +151,5 @@ app.MapFallbackToFile(
     "index.html");
 
 app.Run();
+
+public partial class Program;

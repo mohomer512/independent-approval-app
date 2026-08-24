@@ -29,3 +29,17 @@
   --content-max-width: 1540px;
   --transition-fast: 160ms ease;
 }
+
+:root[data-theme='dark'] {
+  --color-canvas: #101820;
+  --color-surface: #18232d;
+  --color-surface-subtle: #202d38;
+  --color-border: #394957;
+  --color-border-subtle: #2c3b47;
+  --color-text: #f2f6f9;
+  --color-text-secondary: #c4d0d9;
+  --color-text-muted: #9eafbc;
+  --color-accent-100: #173d36;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 24%);
+  --shadow-md: 0 12px 34px rgb(0 0 0 / 28%);
+}

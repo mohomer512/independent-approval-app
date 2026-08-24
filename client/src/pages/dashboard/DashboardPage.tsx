@@ -26,6 +26,7 @@ import type {
   DashboardMetricId,
   QuickActionIconName,
 } from '../../models'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { mockDataService } from '../../services'
 
 function getMetricIcon(metricId: DashboardMetricId): ReactElement {
@@ -54,8 +55,13 @@ function getActionIcon(iconName: QuickActionIconName): ReactElement {
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const currentUser = mockDataService.getCurrentUser()
+  const { data: currentUser } = useCurrentUser()
   const dashboard = mockDataService.getDashboardData()
+  const displayName =
+    currentUser?.displayName.trim() ||
+    currentUser?.userName ||
+    currentUser?.accountName ||
+    'User'
 
   return (
     <div className="dashboard-page page-stack">
@@ -69,7 +75,7 @@ export function DashboardPage() {
         <div className="welcome-panel__content">
           <p className="welcome-panel__eyebrow">Tuesday, 4 August 2026</p>
           <h2 className="welcome-panel__title">
-            Welcome back, {currentUser.name.split(' ')[0]}
+            Welcome, {displayName}
           </h2>
           <p className="welcome-panel__description">
             You have {dashboard.pendingTasks.length} approval tasks waiting for

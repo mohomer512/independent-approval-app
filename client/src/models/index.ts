@@ -1,9 +1,19 @@
 export type {
-  AdministrationArea,
   AdministrationAreaId,
   AdministrationIconName,
-  AdministrationMetric,
-  AdministrationOverview,
+  AdministrationSummary,
+  AdminRoleListQuery,
+  AdminUserListQuery,
+  ApplicationRole,
+  ApplicationUser,
+  CreateRoleRequest,
+  LockUserRequest,
+  PagedResponse,
+  PermissionDefinition,
+  RoleReference,
+  RowVersionRequest,
+  UpdateRoleRequest,
+  UpdateUserRolesRequest,
 } from './administration'
 export type { AntiforgeryToken } from './antiforgeryToken'
 export type { ApiDocument, DocumentListResponse } from './apiDocument'
@@ -27,7 +37,12 @@ export type {
   DocumentCategory,
   DocumentStatus,
 } from './document'
-export type { CurrentUser } from './currentUser'
+export type {
+  ApplicationAccessState,
+  ApplicationLanguage,
+  ApplicationTheme,
+  CurrentUser,
+} from './currentUser'
 export type {
   AppRoute,
   NavigationIconName,

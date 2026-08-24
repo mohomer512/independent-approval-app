@@ -7,6 +7,7 @@ import {
 } from '@fluentui/react-icons'
 import { NavLink } from 'react-router'
 import { navigationItems } from '../../app/navigation'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 
 interface NavigationSidebarProps {
   readonly collapsed: boolean
@@ -24,6 +25,12 @@ export function NavigationSidebar({
   onClose,
 }: NavigationSidebarProps) {
   const isCollapsed = collapsed && !mobile
+  const { data: currentUser } = useCurrentUser()
+  const visibleNavigationItems = navigationItems.filter(
+    (item) =>
+      !item.systemAdministratorOnly ||
+      currentUser?.isSystemAdministrator === true,
+  )
 
   return (
     <aside
@@ -68,7 +75,7 @@ export function NavigationSidebar({
           Menu
         </span>
         <ul className="sidebar__list">
-          {navigationItems.map((item) => {
+          {visibleNavigationItems.map((item) => {
             const Icon = item.icon
 
             return (

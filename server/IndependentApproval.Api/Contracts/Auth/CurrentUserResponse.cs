@@ -5,4 +5,13 @@ public sealed record CurrentUserResponse(
     string AccountName,
     string Domain,
     string UserName,
-    string AuthenticationType);
+    string AuthenticationType,
+    string DisplayName,
+    Guid? ApplicationUserId,
+    string AccessState,
+    bool HasApplicationAccess,
+    bool IsSystemAdministrator,
+    IReadOnlyList<string> RoleCodes,
+    IReadOnlyList<string> Permissions,
+    string Language,
+    string Theme);

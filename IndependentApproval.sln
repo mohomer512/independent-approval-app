@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{DAD03C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndependentApproval.Api", "server\IndependentApproval.Api\IndependentApproval.Api.csproj", "{495DD7F8-61A8-45D3-BB97-46AD5EAA5D2C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndependentApproval.Api.Tests", "server\IndependentApproval.Api.Tests\IndependentApproval.Api.Tests.csproj", "{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,11 +31,24 @@ Global
 		{495DD7F8-61A8-45D3-BB97-46AD5EAA5D2C}.Release|x64.Build.0 = Release|Any CPU
 		{495DD7F8-61A8-45D3-BB97-46AD5EAA5D2C}.Release|x86.ActiveCfg = Release|Any CPU
 		{495DD7F8-61A8-45D3-BB97-46AD5EAA5D2C}.Release|x86.Build.0 = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|x64.Build.0 = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Debug|x86.Build.0 = Debug|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|x64.ActiveCfg = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|x64.Build.0 = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|x86.ActiveCfg = Release|Any CPU
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{495DD7F8-61A8-45D3-BB97-46AD5EAA5D2C} = {DAD03CFC-D5FA-AC94-41C7-9ABAB326F09E}
+		{1D4AF0BE-34B4-4FEC-B675-D70D1C6D25A3} = {DAD03CFC-D5FA-AC94-41C7-9ABAB326F09E}
 	EndGlobalSection
 EndGlobal

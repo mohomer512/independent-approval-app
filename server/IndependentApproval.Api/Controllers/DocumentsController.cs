@@ -1,3 +1,4 @@
+using IndependentApproval.Api.Application.Authorization;
 using IndependentApproval.Api.Application.Documents;
 using IndependentApproval.Api.Contracts.Documents;
 using IndependentApproval.Api.Infrastructure.Storage;
@@ -9,7 +10,7 @@ namespace IndependentApproval.Api.Controllers;
 
 [ApiController]
 [Route("api/documents")]
-[Authorize]
+[Authorize(Policy = AuthorizationPolicyNames.ApplicationUser)]
 public sealed class DocumentsController(IDocumentService documentService) : ControllerBase
 {
     [HttpPost]

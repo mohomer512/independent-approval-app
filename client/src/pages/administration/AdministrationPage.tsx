@@ -1,10 +1,6 @@
-import { Badge, Button, Card, Spinner } from '@fluentui/react-components'
+import { Button, Card } from '@fluentui/react-components'
 import {
-  ArrowClockwise20Regular,
   ArrowRight20Regular,
-  Building20Regular,
-  CheckmarkCircle24Regular,
-  DismissCircle24Regular,
   Flow24Regular,
   Form24Regular,
   People24Regular,
@@ -12,33 +8,73 @@ import {
   Shield24Regular,
 } from '@fluentui/react-icons'
 import type { ReactNode } from 'react'
-import {
-  PageHeader,
-  SectionPanel,
-  StatusBadge,
-  SummaryCard,
-} from '../../components/common'
-import { useSystemInfo } from '../../hooks/useSystemInfo'
-import type { AdministrationIconName } from '../../models'
-import { mockDataService } from '../../services'
+import { useNavigate } from 'react-router'
+import { AdministrationResourceState } from '../../components/administration/AdministrationResourceState'
+import { PageHeader, SectionPanel, SummaryCard } from '../../components/common'
+import { useAdministrationSummary } from '../../hooks/useAdministrationSummary'
+import type {
+  AdministrationAreaId,
+  AdministrationIconName,
+  AdministrationSummary,
+} from '../../models'
 
-const systemTimestampFormatter = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  month: 'short',
-  second: '2-digit',
-  timeZone: 'UTC',
-  timeZoneName: 'short',
-  year: 'numeric',
-})
-
-function formatSystemTimestamp(value: string): string {
-  const timestamp = new Date(value)
-  return Number.isNaN(timestamp.getTime())
-    ? 'Unavailable'
-    : systemTimestampFormatter.format(timestamp)
+interface AdministrationAreaDefinition {
+  readonly id: AdministrationAreaId
+  readonly title: string
+  readonly description: string
+  readonly icon: AdministrationIconName
+  readonly path: string
+  readonly getCount: (summary: AdministrationSummary) => number | null
+  readonly itemLabel: string | null
 }
+
+const administrationAreas: readonly AdministrationAreaDefinition[] = [
+  {
+    id: 'users',
+    title: 'Users',
+    description: 'Manage application access, role assignments, and account status.',
+    icon: 'people',
+    path: '/administration/users',
+    getCount: (summary) => summary.activeUserCount,
+    itemLabel: 'active users',
+  },
+  {
+    id: 'roles',
+    title: 'Roles and permissions',
+    description: 'Create application roles from the fixed permission catalogue.',
+    icon: 'permissions',
+    path: '/administration/roles',
+    getCount: (summary) => summary.activeRoleCount,
+    itemLabel: 'active roles',
+  },
+  {
+    id: 'workflows',
+    title: 'Approval workflows',
+    description: 'Configure versioned steps, transitions, and field permissions.',
+    icon: 'workflow',
+    path: '/administration/workflows',
+    getCount: (summary) => summary.publishedWorkflowCount,
+    itemLabel: 'published workflows',
+  },
+  {
+    id: 'request-types',
+    title: 'Request types',
+    description: 'Define bilingual, versioned forms and custom fields.',
+    icon: 'form',
+    path: '/administration/request-types',
+    getCount: (summary) => summary.activeRequestTypeCount,
+    itemLabel: 'active request types',
+  },
+  {
+    id: 'settings',
+    title: 'System settings',
+    description: 'Choose the application default language.',
+    icon: 'settings',
+    path: '/administration/settings',
+    getCount: () => null,
+    itemLabel: null,
+  },
+]
 
 function getAreaIcon(iconName: AdministrationIconName): ReactNode {
   switch (iconName) {
@@ -55,204 +91,110 @@ function getAreaIcon(iconName: AdministrationIconName): ReactNode {
   }
 }
 
-function getMetricIcon(metricId: string): ReactNode {
-  switch (metricId) {
-    case 'active-users':
-      return <People24Regular />
-    case 'published-workflows':
-      return <Flow24Regular />
-    default:
-      return <Form24Regular />
-  }
-}
-
 export function AdministrationPage() {
-  const overview = mockDataService.getAdministrationOverview()
-  const areas = mockDataService.getAdministrationAreas()
-  const { data: systemInfo, loading, error, retry } = useSystemInfo()
-  const connectionStatus = loading
-    ? 'Loading'
-    : systemInfo
-      ? 'Connected'
-      : 'Unavailable'
-  const connectionColor = loading
-    ? 'informative'
-    : systemInfo
-      ? 'success'
-      : 'danger'
+  const navigate = useNavigate()
+  const { data: summary, loading, error, retry } = useAdministrationSummary()
 
   return (
     <div className="administration-page page-stack">
       <PageHeader
         eyebrow="Configuration"
         title="Administration"
-        description="Manage users, roles, workflows, request types, and application settings."
+        description="Manage application access, roles, workflows, request types, and system settings."
       />
 
-      <section className="administration-summary" aria-label="System summary">
-        {overview.metrics.map((metric) => (
-          <SummaryCard
-            key={metric.id}
-            label={metric.label}
-            value={metric.value}
-            description={metric.description}
-            icon={getMetricIcon(metric.id)}
-            tone="brand"
-          />
-        ))}
-      </section>
-
-      <SectionPanel
-        title="System Information"
-        description="Live deployment details reported by the independent ASP.NET API."
-        action={
-          <div className="system-information__connection">
-            <span className="system-information__connection-label">
-              API connection status
-            </span>
-            <Badge
-              appearance="tint"
-              color={connectionColor}
-              aria-label={`API connection status: ${connectionStatus}`}
+      <AdministrationResourceState
+        loading={loading}
+        error={error}
+        loadingLabel="Loading administration summary"
+        onRetry={retry}
+      >
+        {summary ? (
+          <>
+            <section
+              className="administration-summary"
+              aria-label="Administration summary"
             >
-              {connectionStatus}
-            </Badge>
-          </div>
-        }
-      >
-        <div className="system-information" aria-busy={loading}>
-          {loading ? (
-            <div className="system-information__loading" role="status">
-              <Spinner size="small" label="Connecting to the API" />
-              <p>Requesting live system details.</p>
-            </div>
-          ) : systemInfo ? (
-            <dl className="system-information__grid">
-              <div className="system-information__item">
-                <dt>Application name</dt>
-                <dd>{systemInfo.applicationName}</dd>
-              </div>
-              <div className="system-information__item">
-                <dt>Version</dt>
-                <dd>{systemInfo.version}</dd>
-              </div>
-              <div className="system-information__item">
-                <dt>Environment</dt>
-                <dd>{systemInfo.environment}</dd>
-              </div>
-              <div className="system-information__item">
-                <dt>UTC timestamp</dt>
-                <dd>
-                  <time dateTime={systemInfo.currentUtcTimestamp}>
-                    {formatSystemTimestamp(systemInfo.currentUtcTimestamp)}
-                  </time>
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <div className="system-information__unavailable" role="alert">
-              <div className="system-information__unavailable-icon" aria-hidden="true">
-                <DismissCircle24Regular />
-              </div>
-              <div className="system-information__unavailable-copy">
-                <h3>System information is unavailable</h3>
-                <p>{error ?? 'The API could not be reached. Please try again.'}</p>
-              </div>
-              <Button
-                type="button"
-                appearance="primary"
-                icon={<ArrowClockwise20Regular />}
-                onClick={retry}
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-        </div>
-      </SectionPanel>
+              <SummaryCard
+                label="Active users"
+                value={summary.activeUserCount}
+                description="Accounts currently enabled"
+                icon={<People24Regular />}
+                tone="brand"
+              />
+              <SummaryCard
+                label="Active roles"
+                value={summary.activeRoleCount}
+                description="Custom roles available"
+                icon={<Shield24Regular />}
+                tone="informative"
+              />
+              <SummaryCard
+                label="Published workflows"
+                value={summary.publishedWorkflowCount}
+                description="Stable workflow versions"
+                icon={<Flow24Regular />}
+                tone="success"
+              />
+              <SummaryCard
+                label="Request types"
+                value={summary.activeRequestTypeCount}
+                description="Active request definitions"
+                icon={<Form24Regular />}
+                tone="neutral"
+              />
+            </section>
 
-      <SectionPanel
-        title="Configuration areas"
-        description="Choose an area to manage the on-premises approval environment."
-      >
-        <div className="administration-grid">
-          {areas.map((area) => (
-            <Card className="administration-card" key={area.id} role="article">
-              <div className="administration-card__icon" aria-hidden="true">
-                {getAreaIcon(area.icon)}
-              </div>
-              <div className="administration-card__content">
-                <h3 className="administration-card__title">{area.title}</h3>
-                <p className="administration-card__description">
-                  {area.description}
-                </p>
-                {area.itemCount !== null && area.itemLabel !== null ? (
-                  <p className="administration-card__count">
-                    <strong>{area.itemCount}</strong> {area.itemLabel}
-                  </p>
-                ) : (
-                  <p className="administration-card__count">
-                    Organization-wide defaults
-                  </p>
-                )}
-              </div>
-              <Button
-                type="button"
-                appearance="subtle"
-                icon={<ArrowRight20Regular />}
-                iconPosition="after"
-                aria-label={`Open ${area.title}`}
-              >
-                Manage
-              </Button>
-            </Card>
-          ))}
-        </div>
-      </SectionPanel>
+            <SectionPanel
+              title="Configuration areas"
+              description="Choose an area to manage the Independent Approval application."
+            >
+              <div className="administration-grid">
+                {administrationAreas.map((area) => {
+                  const count = area.getCount(summary)
 
-      <SectionPanel
-        title="Deployment readiness"
-        description="Stage 1 establishes the application shell without external dependencies."
-      >
-        <div className="readiness-grid">
-          <article className="readiness-item">
-            <div className="readiness-item__icon" aria-hidden="true">
-              <Building20Regular />
-            </div>
-            <div className="readiness-item__content">
-              <div className="readiness-item__heading">
-                <h3>On-premises application</h3>
-                <StatusBadge status="Active" />
+                  return (
+                    <Card
+                      className="administration-card"
+                      key={area.id}
+                      role="article"
+                    >
+                      <div className="administration-card__icon" aria-hidden="true">
+                        {getAreaIcon(area.icon)}
+                      </div>
+                      <div className="administration-card__content">
+                        <h3 className="administration-card__title">{area.title}</h3>
+                        <p className="administration-card__description">
+                          {area.description}
+                        </p>
+                        <p className="administration-card__count">
+                          {count === null || area.itemLabel === null ? (
+                            'Application-wide default'
+                          ) : (
+                            <>
+                              <strong>{count}</strong> {area.itemLabel}
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        appearance="subtle"
+                        icon={<ArrowRight20Regular />}
+                        iconPosition="after"
+                        aria-label={`Open ${area.title}`}
+                        onClick={() => navigate(area.path)}
+                      >
+                        Manage
+                      </Button>
+                    </Card>
+                  )
+                })}
               </div>
-              <p>The client application is designed for local deployment.</p>
-            </div>
-          </article>
-          <article className="readiness-item">
-            <div className="readiness-item__icon" aria-hidden="true">
-              <Shield24Regular />
-            </div>
-            <div className="readiness-item__content">
-              <div className="readiness-item__heading">
-                <h3>Directory integration</h3>
-                <StatusBadge status="Planned" />
-              </div>
-              <p>Enterprise identity integration will be configured later.</p>
-            </div>
-          </article>
-          <article className="readiness-item">
-            <div className="readiness-item__icon" aria-hidden="true">
-              <CheckmarkCircle24Regular />
-            </div>
-            <div className="readiness-item__content">
-              <div className="readiness-item__heading">
-                <h3>Mock data boundary</h3>
-                <StatusBadge status="Active" />
-              </div>
-              <p>Pages consume typed data through a replaceable service layer.</p>
-            </div>
-          </article>
-        </div>
-      </SectionPanel>
+            </SectionPanel>
+          </>
+        ) : null}
+      </AdministrationResourceState>
     </div>
   )
 }

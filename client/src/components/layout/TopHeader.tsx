@@ -16,12 +16,14 @@ export function TopHeader({
     !loading && currentUser?.isAuthenticated === true ? currentUser : null
   const isUnavailable = !loading && authenticatedUser === null
   const primaryText = authenticatedUser
-    ? authenticatedUser.userName
+    ? authenticatedUser.displayName.trim() ||
+      authenticatedUser.userName ||
+      authenticatedUser.accountName
     : loading
       ? 'Identifying user'
       : 'User unavailable'
   const profileLabel = authenticatedUser
-    ? `Signed in as ${authenticatedUser.userName}, ${authenticatedUser.accountName}`
+    ? `Signed in as ${primaryText}, ${authenticatedUser.accountName}`
     : primaryText
   const profileStateClass = loading
     ? ' user-profile--loading'

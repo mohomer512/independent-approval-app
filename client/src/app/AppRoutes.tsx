@@ -1,6 +1,9 @@
 import { lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
+import { ApplicationAccessBoundary } from '../components/access/ApplicationAccessBoundary'
+import { RequireSystemAdministrator } from '../components/access/RequireSystemAdministrator'
 import { AppLayout } from '../components/layout/AppLayout'
+import { AdministrationFoundationPendingPage } from '../pages/administration/AdministrationFoundationPendingPage'
 
 const DashboardPage = lazy(() =>
   import('../pages/dashboard/DashboardPage').then((module) => ({
@@ -32,18 +35,64 @@ const AdministrationPage = lazy(() =>
     default: module.AdministrationPage,
   })),
 )
+const UsersPage = lazy(() =>
+  import('../pages/administration/users/UsersPage').then((module) => ({
+    default: module.UsersPage,
+  })),
+)
+const RolesPage = lazy(() =>
+  import('../pages/administration/roles/RolesPage').then((module) => ({
+    default: module.RolesPage,
+  })),
+)
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="requests" element={<RequestsPage />} />
-        <Route path="requests/new" element={<NewRequestPage />} />
-        <Route path="tasks" element={<TasksPage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="administration" element={<AdministrationPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+      <Route element={<ApplicationAccessBoundary />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="requests" element={<RequestsPage />} />
+          <Route path="requests/new" element={<NewRequestPage />} />
+          <Route path="tasks" element={<TasksPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route
+            path="administration"
+            element={<RequireSystemAdministrator />}
+          >
+            <Route index element={<AdministrationPage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="roles" element={<RolesPage />} />
+            <Route
+              path="request-types"
+              element={
+                <AdministrationFoundationPendingPage
+                  title="Request types"
+                  description="Create bilingual, versioned request forms and field definitions."
+                />
+              }
+            />
+            <Route
+              path="workflows"
+              element={
+                <AdministrationFoundationPendingPage
+                  title="Approval workflows"
+                  description="Design versioned approval graphs, steps, transitions, and permissions."
+                />
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AdministrationFoundationPendingPage
+                  title="System settings"
+                  description="Manage the application default language."
+                />
+              }
+            />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Route>
     </Routes>
   )
