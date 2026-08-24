@@ -50,6 +50,11 @@ const RequestTypesPage = lazy(() =>
     (module) => ({ default: module.RequestTypesPage }),
   ),
 )
+const WorkflowsPage = lazy(() =>
+  import('../pages/administration/workflows/WorkflowsPage').then((module) => ({
+    default: module.WorkflowsPage,
+  })),
+)
 
 export function AppRoutes() {
   return (
@@ -69,15 +74,7 @@ export function AppRoutes() {
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="request-types" element={<RequestTypesPage />} />
-            <Route
-              path="workflows"
-              element={
-                <AdministrationFoundationPendingPage
-                  title="Approval workflows"
-                  description="Design versioned approval graphs, steps, transitions, and permissions."
-                />
-              }
-            />
+            <Route path="workflows" element={<WorkflowsPage />} />
             <Route
               path="settings"
               element={
