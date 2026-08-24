@@ -20,6 +20,30 @@ export type {
   UpdateUserRolesRequest,
 } from './administration'
 export type { AntiforgeryToken } from './antiforgeryToken'
+export type {
+  AdminRequestTypeListQuery,
+  CreateRequestTypeFieldRequest,
+  CreateRequestTypeRequest,
+  RequestDocumentMode,
+  RequestFieldChoiceConfig,
+  RequestFieldChoiceOption,
+  RequestFieldDefaultValue,
+  RequestFieldType,
+  RequestFieldValidationConfig,
+  RequestTypeDetail,
+  RequestTypeField,
+  RequestTypeFieldConcurrencyRequest,
+  RequestTypeFieldValues,
+  RequestTypeLifecycle,
+  RequestTypeListItem,
+  RequestTypeListResponse,
+  RequestTypeRowVersionRequest,
+  RequestTypeSystemField,
+  RequestTypeVersion,
+  RequestTypeVersionSummary,
+  UpdateRequestTypeFieldRequest,
+  UpdateRequestTypeVersionRequest,
+} from './requestTypeAdministration'
 export type { ApiDocument, DocumentListResponse } from './apiDocument'
 export type {
   ApprovalRequest,

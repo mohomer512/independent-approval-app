@@ -2,6 +2,7 @@ using IndependentApproval.Api.Application.Administration;
 using IndependentApproval.Api.Application.Authorization;
 using IndependentApproval.Api.Application.Directory;
 using IndependentApproval.Api.Application.Documents;
+using IndependentApproval.Api.Application.Requests;
 using IndependentApproval.Api.Infrastructure;
 using IndependentApproval.Api.Infrastructure.ActiveDirectory;
 using IndependentApproval.Api.Infrastructure.Persistence;
@@ -79,6 +80,8 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<IRoleAdministrationService, RoleAdministrationService>();
 builder.Services.AddScoped<IAdministrationSummaryService, AdministrationSummaryService>();
 builder.Services.AddScoped<IDirectoryAdministrationService, DirectoryAdministrationService>();
+builder.Services.AddScoped<IRequestTypeAdministrationService, RequestTypeAdministrationService>();
+builder.Services.AddScoped<IRequestNumberGenerator, RequestNumberGenerator>();
 builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
     options.UseSqlServer(
         databaseConnectionString,

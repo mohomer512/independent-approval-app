@@ -45,6 +45,11 @@ const RolesPage = lazy(() =>
     default: module.RolesPage,
   })),
 )
+const RequestTypesPage = lazy(() =>
+  import('../pages/administration/requestTypes/RequestTypesPage').then(
+    (module) => ({ default: module.RequestTypesPage }),
+  ),
+)
 
 export function AppRoutes() {
   return (
@@ -63,15 +68,7 @@ export function AppRoutes() {
             <Route index element={<AdministrationPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
-            <Route
-              path="request-types"
-              element={
-                <AdministrationFoundationPendingPage
-                  title="Request types"
-                  description="Create bilingual, versioned request forms and field definitions."
-                />
-              }
-            />
+            <Route path="request-types" element={<RequestTypesPage />} />
             <Route
               path="workflows"
               element={

@@ -4,6 +4,7 @@ using IndependentApproval.Api.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(IndependentApprovalDbContext))]
-    partial class IndependentApprovalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824102937_AddRequestTypesAndRequestFoundation")]
+    partial class AddRequestTypesAndRequestFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1050,78 +1053,6 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypePrefixReservation", b =>
-                {
-                    b.Property<string>("NormalizedPrefix")
-                        .HasMaxLength(30)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(30)");
-
-                    b.Property<Guid>("RequestTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("ReservedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetimeoffset")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<string>("ReservedByAccount")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<Guid?>("ReservedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("NormalizedPrefix");
-
-                    b.HasAlternateKey("RequestTypeId", "NormalizedPrefix")
-                        .HasName("AK_RequestTypePrefixReservations_RequestTypeId_NormalizedPrefix");
-
-                    b.HasIndex("ReservedByUserId");
-
-                    b.ToTable("RequestTypePrefixReservations", "app", t =>
-                        {
-                            t.HasCheckConstraint("CK_RequestTypePrefixReservations_NormalizedPrefix_Valid", "LEN([NormalizedPrefix]) > 0 AND [NormalizedPrefix] COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Z0-9]%' COLLATE Latin1_General_100_BIN2");
-                        });
-                });
-
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypeSlugReservation", b =>
-                {
-                    b.Property<string>("NormalizedSlug")
-                        .HasMaxLength(200)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<Guid>("RequestTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("ReservedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetimeoffset")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<string>("ReservedByAccount")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<Guid?>("ReservedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("NormalizedSlug");
-
-                    b.HasAlternateKey("RequestTypeId", "NormalizedSlug")
-                        .HasName("AK_RequestTypeSlugReservations_RequestTypeId_NormalizedSlug");
-
-                    b.HasIndex("ReservedByUserId");
-
-                    b.ToTable("RequestTypeSlugReservations", "app", t =>
-                        {
-                            t.HasCheckConstraint("CK_RequestTypeSlugReservations_NormalizedSlug_Valid", "LEN([NormalizedSlug]) > 0 AND [NormalizedSlug] COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^a-z0-9-]%' COLLATE Latin1_General_100_BIN2");
-                        });
-                });
-
             modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypeVersion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1191,8 +1122,7 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                     b.Property<string>("NavigationSlug")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTimeOffset?>("PublishedAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -1207,8 +1137,7 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                     b.Property<string>("RequestPrefix")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(30)");
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<Guid>("RequestTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -1243,10 +1172,6 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                     b.HasIndex("Lifecycle", "NavigationOrder");
 
                     b.HasIndex("Lifecycle", "NavigationSlug");
-
-                    b.HasIndex("RequestTypeId", "NavigationSlug");
-
-                    b.HasIndex("RequestTypeId", "RequestPrefix");
 
                     b.HasIndex("RequestTypeId", "VersionNumber")
                         .IsUnique();
@@ -1533,42 +1458,6 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypePrefixReservation", b =>
-                {
-                    b.HasOne("IndependentApproval.Api.Domain.Requests.RequestType", "RequestType")
-                        .WithMany("PrefixReservations")
-                        .HasForeignKey("RequestTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", "ReservedByUser")
-                        .WithMany()
-                        .HasForeignKey("ReservedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("RequestType");
-
-                    b.Navigation("ReservedByUser");
-                });
-
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypeSlugReservation", b =>
-                {
-                    b.HasOne("IndependentApproval.Api.Domain.Requests.RequestType", "RequestType")
-                        .WithMany("SlugReservations")
-                        .HasForeignKey("RequestTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", "ReservedByUser")
-                        .WithMany()
-                        .HasForeignKey("ReservedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("RequestType");
-
-                    b.Navigation("ReservedByUser");
-                });
-
             modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypeVersion", b =>
                 {
                     b.HasOne("IndependentApproval.Api.Domain.Administration.ApplicationUser", null)
@@ -1597,25 +1486,7 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("IndependentApproval.Api.Domain.Requests.RequestTypeSlugReservation", "SlugReservation")
-                        .WithMany("Versions")
-                        .HasForeignKey("RequestTypeId", "NavigationSlug")
-                        .HasPrincipalKey("RequestTypeId", "NormalizedSlug")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IndependentApproval.Api.Domain.Requests.RequestTypePrefixReservation", "PrefixReservation")
-                        .WithMany("Versions")
-                        .HasForeignKey("RequestTypeId", "RequestPrefix")
-                        .HasPrincipalKey("RequestTypeId", "NormalizedPrefix")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PrefixReservation");
-
                     b.Navigation("RequestType");
-
-                    b.Navigation("SlugReservation");
                 });
 
             modelBuilder.Entity("IndependentApproval.Api.Domain.Administration.ApplicationRole", b =>
@@ -1655,22 +1526,8 @@ namespace IndependentApproval.Api.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestType", b =>
                 {
-                    b.Navigation("PrefixReservations");
-
                     b.Navigation("Requests");
 
-                    b.Navigation("SlugReservations");
-
-                    b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypePrefixReservation", b =>
-                {
-                    b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("IndependentApproval.Api.Domain.Requests.RequestTypeSlugReservation", b =>
-                {
                     b.Navigation("Versions");
                 });
 

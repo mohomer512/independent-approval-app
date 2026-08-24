@@ -106,6 +106,19 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         return await query(dbContext);
     }
 
+    internal async Task<TResult> ExecuteScopedAsync<TResult>(
+        Func<IServiceProvider, Task<TResult>> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        var factory = _factory
+            ?? throw new InvalidOperationException("The API fixture has not been initialized.");
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<IndependentApprovalDbContext>();
+        EnsureResolvedContextUsesDisposableLocalDb(dbContext);
+        return await action(scope.ServiceProvider);
+    }
+
     public async Task DisposeAsync()
     {
         try

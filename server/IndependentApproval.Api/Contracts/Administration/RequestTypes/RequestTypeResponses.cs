@@ -1,0 +1,110 @@
+using System.Text.Json;
+
+namespace IndependentApproval.Api.Contracts.Administration.RequestTypes;
+
+public sealed record RequestTypeListItemResponse(
+    Guid Id,
+    string Code,
+    bool IsArchived,
+    RequestTypeVersionSummaryResponse? DisplayVersion,
+    Guid? DraftVersionId,
+    Guid? LatestPublishedVersionId,
+    int VersionCount,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    DateTimeOffset? ArchivedAtUtc,
+    string? ArchivedByAccount,
+    string RowVersion);
+
+public sealed record RequestTypeDetailResponse(
+    Guid Id,
+    string Code,
+    bool IsArchived,
+    IReadOnlyList<RequestTypeVersionResponse> Versions,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    DateTimeOffset? ArchivedAtUtc,
+    string? ArchivedByAccount,
+    string RowVersion);
+
+public sealed record RequestTypeVersionSummaryResponse(
+    Guid Id,
+    int VersionNumber,
+    string NameEnglish,
+    string NameArabic,
+    string DescriptionEnglish,
+    string DescriptionArabic,
+    string RequestPrefix,
+    string NavigationSlug,
+    int NavigationOrder,
+    string Lifecycle,
+    int FieldCount,
+    bool IsInUse,
+    int RequestCount,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    DateTimeOffset? PublishedAtUtc,
+    string? PublishedByAccount,
+    DateTimeOffset? ArchivedAtUtc,
+    string? ArchivedByAccount,
+    string RowVersion);
+
+public sealed record RequestTypeVersionResponse(
+    Guid Id,
+    int VersionNumber,
+    string NameEnglish,
+    string NameArabic,
+    string DescriptionEnglish,
+    string DescriptionArabic,
+    string RequestPrefix,
+    string NavigationSlug,
+    int NavigationOrder,
+    string Lifecycle,
+    bool IsInUse,
+    int RequestCount,
+    IReadOnlyList<RequestFieldDefinitionResponse> Fields,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    DateTimeOffset? PublishedAtUtc,
+    string? PublishedByAccount,
+    DateTimeOffset? ArchivedAtUtc,
+    string? ArchivedByAccount,
+    string RowVersion);
+
+public sealed record RequestFieldDefinitionResponse(
+    Guid Id,
+    string Key,
+    string LabelEnglish,
+    string LabelArabic,
+    string? HelpTextEnglish,
+    string? HelpTextArabic,
+    string FieldType,
+    bool IsRequired,
+    JsonElement? DefaultValue,
+    JsonElement? ValidationConfig,
+    JsonElement? ChoiceConfig,
+    int SortOrder,
+    bool IsActive,
+    string? DocumentMode,
+    DateTimeOffset CreatedAtUtc,
+    string CreatedByAccount,
+    DateTimeOffset? ModifiedAtUtc,
+    string? ModifiedByAccount,
+    string RowVersion);
+
+public sealed record SystemRequestFieldResponse(
+    string Key,
+    string LabelEnglish,
+    string LabelArabic,
+    string DataType,
+    bool IsAlwaysVisible,
+    bool IsEditable,
+    bool IsRemovable);

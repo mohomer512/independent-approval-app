@@ -20,11 +20,16 @@ public sealed class AdministrationSummaryService(
             .CountAsync(
                 role => role.IsActive && !role.IsArchived,
                 cancellationToken);
+        var activeRequestTypeCount = await dbContext.RequestTypes
+            .AsNoTracking()
+            .CountAsync(
+                requestType => !requestType.IsArchived,
+                cancellationToken);
 
         return new AdministrationSummaryResponse(
             activeUserCount,
             activeRoleCount,
             PublishedWorkflowCount: 0,
-            ActiveRequestTypeCount: 0);
+            activeRequestTypeCount);
     }
 }
