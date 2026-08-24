@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using IndependentApproval.Api.Application.Directory;
 using IndependentApproval.Api.Domain.Administration;
 using IndependentApproval.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,6 +27,12 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
 
     public Guid BootstrapAdministratorId { get; } = Guid.NewGuid();
 
+    public Guid ApplicationUserId { get; } = Guid.NewGuid();
+
+    public Guid ApplicationRoleId { get; } = Guid.NewGuid();
+
+    internal FakeDirectoryService DirectoryService { get; } = new();
+
     public string ConnectionString =>
         $"Server={LocalDbServer};Database={_databaseName};Integrated Security=True;" +
         "TrustServerCertificate=True;MultipleActiveResultSets=False;Pooling=False;Connect Timeout=30";
@@ -33,7 +40,10 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         EnsureDisposableLocalDbTarget();
-        _factory = new IndependentApprovalApiFactory(ConnectionString, _documentStoragePath);
+        _factory = new IndependentApprovalApiFactory(
+            ConnectionString,
+            _documentStoragePath,
+            DirectoryService);
 
         try
         {
@@ -41,6 +51,7 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
             var dbContext = scope.ServiceProvider
                 .GetRequiredService<IndependentApprovalDbContext>();
             EnsureResolvedContextUsesDisposableLocalDb(dbContext);
+            EnsureResolvedDirectoryServiceIsFake(scope.ServiceProvider);
             await dbContext.Database.MigrateAsync();
             await SeedApplicationAccessAsync(dbContext);
         }
@@ -82,6 +93,19 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         return client;
     }
 
+    internal async Task<TResult> QueryDatabaseAsync<TResult>(
+        Func<IndependentApprovalDbContext, Task<TResult>> query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var factory = _factory
+            ?? throw new InvalidOperationException("The API fixture has not been initialized.");
+        await using var scope = factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<IndependentApprovalDbContext>();
+        EnsureResolvedContextUsesDisposableLocalDb(dbContext);
+        return await query(dbContext);
+    }
+
     public async Task DisposeAsync()
     {
         try
@@ -105,7 +129,6 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         IndependentApprovalDbContext dbContext)
     {
         var now = DateTimeOffset.UtcNow;
-        var accessRoleId = Guid.NewGuid();
         var users = new[]
         {
             CreateUser(
@@ -115,7 +138,7 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
                 "Bootstrap Administrator",
                 now),
             CreateUser(
-                Guid.NewGuid(),
+                ApplicationUserId,
                 ApplicationUserAccount,
                 1102,
                 "Application Member",
@@ -135,9 +158,15 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
                 now,
                 isRemoved: true)
         };
+        users.Single(user =>
+                string.Equals(
+                    user.AccountName,
+                    ApplicationUserAccount,
+                    StringComparison.OrdinalIgnoreCase))
+            .AdObjectGuid = DirectoryService.RefreshedMember.ObjectGuid;
         var accessRole = new ApplicationRole
         {
-            Id = accessRoleId,
+            Id = ApplicationRoleId,
             Code = "APPLICATION_USER",
             NormalizedCode = "APPLICATION_USER",
             NameEnglish = "Application user",
@@ -156,7 +185,7 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         dbContext.RolePermissions.Add(new RolePermission
         {
             Id = Guid.NewGuid(),
-            ApplicationRoleId = accessRoleId,
+            ApplicationRoleId = ApplicationRoleId,
             PermissionId = PermissionCatalog.AccessApplicationId,
             GrantedAtUtc = now,
             GrantedByAccount = BootstrapAdministratorAccount,
@@ -169,7 +198,7 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
             {
                 Id = Guid.NewGuid(),
                 ApplicationUserId = user.Id,
-                ApplicationRoleId = accessRoleId,
+                ApplicationRoleId = ApplicationRoleId,
                 AssignedAtUtc = now,
                 AssignedByAccount = BootstrapAdministratorAccount,
                 AssignedByUserId = BootstrapAdministratorId
@@ -217,7 +246,7 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         };
     }
 
-    private static byte[] CreateBinarySid(int rid)
+    internal static byte[] CreateBinarySid(int rid)
     {
         // Binary representation of S-1-5-21-111111111-222222222-333333333-{rid}.
         var sid = new byte[28];
@@ -230,6 +259,18 @@ public sealed class AdministrationApiFixture : IAsyncLifetime
         BinaryPrimitives.WriteUInt32LittleEndian(sid.AsSpan(20), 333333333);
         BinaryPrimitives.WriteUInt32LittleEndian(sid.AsSpan(24), (uint)rid);
         return sid;
+    }
+
+    private void EnsureResolvedDirectoryServiceIsFake(IServiceProvider serviceProvider)
+    {
+        var resolvedDirectoryService = serviceProvider
+            .GetRequiredService<IDirectoryService>();
+
+        if (!ReferenceEquals(DirectoryService, resolvedDirectoryService))
+        {
+            throw new InvalidOperationException(
+                "Checkpoint tests must use the deterministic fake directory service.");
+        }
     }
 
     private async Task DeleteDatabaseAsync()

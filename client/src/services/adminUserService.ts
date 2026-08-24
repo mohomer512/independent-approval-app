@@ -1,6 +1,9 @@
 import type {
   AdminUserListQuery,
+  AddApplicationUserRequest,
   ApplicationUser,
+  DirectoryUserSearchQuery,
+  DirectoryUserSearchResponse,
   LockUserRequest,
   PagedResponse,
   RowVersionRequest,
@@ -28,6 +31,16 @@ function createUserPath(id: string, action?: string): string {
   return action ? `${basePath}/${action}` : basePath
 }
 
+function createDirectorySearchPath(query: DirectoryUserSearchQuery): string {
+  const searchParameters = new URLSearchParams({
+    query: query.query.trim(),
+    page: String(query.page),
+    pageSize: String(query.pageSize),
+  })
+
+  return `/api/admin/directory/users?${searchParameters}`
+}
+
 export interface AdminUserService {
   readonly getUsers: (
     query: AdminUserListQuery,
@@ -35,6 +48,14 @@ export interface AdminUserService {
   ) => Promise<PagedResponse<ApplicationUser>>
   readonly getUser: (
     id: string,
+    signal?: AbortSignal,
+  ) => Promise<ApplicationUser>
+  readonly searchDirectoryUsers: (
+    query: DirectoryUserSearchQuery,
+    signal?: AbortSignal,
+  ) => Promise<DirectoryUserSearchResponse>
+  readonly addUser: (
+    request: AddApplicationUserRequest,
     signal?: AbortSignal,
   ) => Promise<ApplicationUser>
   readonly updateRoles: (
@@ -62,6 +83,11 @@ export interface AdminUserService {
     request: RowVersionRequest,
     signal?: AbortSignal,
   ) => Promise<ApplicationUser>
+  readonly refreshDirectoryProfile: (
+    id: string,
+    request: RowVersionRequest,
+    signal?: AbortSignal,
+  ) => Promise<ApplicationUser>
 }
 
 export const adminUserService: AdminUserService = {
@@ -71,6 +97,16 @@ export const adminUserService: AdminUserService = {
     }),
   getUser: (id, signal) =>
     apiClient.get<ApplicationUser>(createUserPath(id), { signal }),
+  searchDirectoryUsers: (query, signal) =>
+    apiClient.get<DirectoryUserSearchResponse>(
+      createDirectorySearchPath(query),
+      { signal },
+    ),
+  addUser: (request, signal) =>
+    apiClient.post<ApplicationUser>('/api/admin/users', {
+      json: request,
+      signal,
+    }),
   updateRoles: (id, request, signal) =>
     apiClient.put<ApplicationUser>(createUserPath(id, 'roles'), {
       json: request,
@@ -96,4 +132,12 @@ export const adminUserService: AdminUserService = {
       json: request,
       signal,
     }),
+  refreshDirectoryProfile: (id, request, signal) =>
+    apiClient.post<ApplicationUser>(
+      createUserPath(id, 'refresh-directory-profile'),
+      {
+        json: request,
+        signal,
+      },
+    ),
 }

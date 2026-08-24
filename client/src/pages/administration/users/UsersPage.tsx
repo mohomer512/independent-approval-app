@@ -2,8 +2,11 @@ import {
   Button,
   Checkbox,
   Input,
+  MessageBar,
+  MessageBarBody,
 } from '@fluentui/react-components'
 import {
+  Add20Regular,
   ArrowClockwise20Regular,
   ArrowLeft20Regular,
   Eye20Regular,
@@ -21,6 +24,7 @@ import {
 import { useAdminRoles } from '../../../hooks/useAdminRoles'
 import { useAdminUsers } from '../../../hooks/useAdminUsers'
 import type { ApplicationUser } from '../../../models'
+import { AddApplicationUserDialog } from './AddApplicationUserDialog'
 import { UserDetailsDialog } from './UserDetailsDialog'
 
 const pageSize = 25
@@ -44,7 +48,10 @@ export function UsersPage() {
   const [includeRemoved, setIncludeRemoved] = useState(false)
   const [page, setPage] = useState(1)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const detailTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const addTriggerRef = useRef<HTMLButtonElement | null>(null)
   const { data, loading, error, retry } = useAdminUsers(
     appliedSearch,
     includeRemoved,
@@ -63,6 +70,11 @@ export function UsersPage() {
     window.requestAnimationFrame(() => detailTriggerRef.current?.focus())
   }
 
+  const closeAddDialog = () => {
+    setAddDialogOpen(false)
+    window.requestAnimationFrame(() => addTriggerRef.current?.focus())
+  }
+
   return (
     <div className="administration-list-page page-stack">
       <PageHeader
@@ -70,16 +82,36 @@ export function UsersPage() {
         title="Users"
         description="Manage application access, status, and custom role assignments. Active Directory accounts are not modified here."
         actions={
-          <Button
-            type="button"
-            appearance="subtle"
-            icon={<ArrowLeft20Regular />}
-            onClick={() => navigate('/administration')}
-          >
-            Administration
-          </Button>
+          <div className="administration-page-actions">
+            <Button
+              type="button"
+              appearance="subtle"
+              icon={<ArrowLeft20Regular />}
+              onClick={() => navigate('/administration')}
+            >
+              Administration
+            </Button>
+            <Button
+              type="button"
+              appearance="primary"
+              icon={<Add20Regular />}
+              onClick={(event) => {
+                addTriggerRef.current = event.currentTarget
+                setSuccessMessage(null)
+                setAddDialogOpen(true)
+              }}
+            >
+              Add from directory
+            </Button>
+          </div>
         }
       />
+
+      {successMessage ? (
+        <MessageBar intent="success" politeness="polite">
+          <MessageBarBody>{successMessage}</MessageBarBody>
+        </MessageBar>
+      ) : null}
 
       <SectionPanel
         title="Application users"
@@ -250,6 +282,25 @@ export function UsersPage() {
           onRetryRoles={roles.retry}
           onClose={closeDetails}
           onChanged={retry}
+        />
+      ) : null}
+
+      {addDialogOpen ? (
+        <AddApplicationUserDialog
+          roles={(roles.data?.items ?? []).filter(
+            (role) => role.isActive && !role.isArchived,
+          )}
+          rolesLoading={roles.loading}
+          rolesError={roles.error}
+          onRetryRoles={roles.retry}
+          onClose={closeAddDialog}
+          onAdded={(user) => {
+            setSuccessMessage(
+              `${user.displayName} was added to Independent Approval.`,
+            )
+            closeAddDialog()
+            retry()
+          }}
         />
       ) : null}
     </div>

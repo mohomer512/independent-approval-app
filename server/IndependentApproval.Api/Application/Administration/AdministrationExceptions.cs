@@ -27,6 +27,20 @@ public sealed class AdministrationConflictException(string code, string detail) 
         code,
         detail);
 
+public sealed class AdministrationBadRequestException(string code, string detail) :
+    AdministrationException(
+        StatusCodes.Status400BadRequest,
+        "The administration request is invalid.",
+        code,
+        detail);
+
+public sealed class AdministrationServiceUnavailableException(string code, string detail) :
+    AdministrationException(
+        StatusCodes.Status503ServiceUnavailable,
+        "A required administration service is unavailable.",
+        code,
+        detail);
+
 public sealed class AdministrationValidationException(
     IReadOnlyDictionary<string, string[]> errors) :
     AdministrationException(

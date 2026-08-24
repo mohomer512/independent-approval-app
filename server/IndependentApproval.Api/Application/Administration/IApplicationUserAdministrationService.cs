@@ -5,6 +5,10 @@ namespace IndependentApproval.Api.Application.Administration;
 
 public interface IApplicationUserAdministrationService
 {
+    Task<ApplicationUserResponse> AddAsync(
+        AddApplicationUserRequest request,
+        CancellationToken cancellationToken);
+
     Task<PagedResponse<ApplicationUserResponse>> ListAsync(
         string? search,
         bool includeRemoved,
@@ -37,6 +41,11 @@ public interface IApplicationUserAdministrationService
         CancellationToken cancellationToken);
 
     Task<ApplicationUserResponse> RestoreAsync(
+        Guid id,
+        ApplicationUserConcurrencyRequest request,
+        CancellationToken cancellationToken);
+
+    Task<ApplicationUserResponse> RefreshDirectoryProfileAsync(
         Guid id,
         ApplicationUserConcurrencyRequest request,
         CancellationToken cancellationToken);

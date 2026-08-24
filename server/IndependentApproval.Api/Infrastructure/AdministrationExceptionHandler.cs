@@ -55,6 +55,8 @@ public sealed class AdministrationExceptionHandler(
             "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5",
         StatusCodes.Status409Conflict =>
             "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.10",
+        StatusCodes.Status503ServiceUnavailable =>
+            "https://www.rfc-editor.org/rfc/rfc9110#section-15.6.4",
         _ => "about:blank"
     };
 }

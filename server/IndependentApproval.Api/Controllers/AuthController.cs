@@ -1,4 +1,5 @@
 using IndependentApproval.Api.Application.Authorization;
+using IndependentApproval.Api.Application.Directory;
 using IndependentApproval.Api.Contracts.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,8 @@ namespace IndependentApproval.Api.Controllers;
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthController(
-    IApplicationAccessService applicationAccessService) : ControllerBase
+    IApplicationAccessService applicationAccessService,
+    ICurrentUserDisplayNameResolver displayNameResolver) : ControllerBase
 {
     [Authorize]
     [HttpGet("me")]
@@ -29,13 +31,18 @@ public sealed class AuthController(
                 cancellationToken);
         }
 
+        var displayName = await displayNameResolver.ResolveAsync(
+            HttpContext.User,
+            access,
+            cancellationToken);
+
         var response = new CurrentUserResponse(
             identity?.IsAuthenticated == true,
             access.AccountName,
             access.Domain,
             access.UserName,
             identity?.AuthenticationType ?? string.Empty,
-            access.DisplayName,
+            displayName,
             access.ApplicationUserId,
             access.AccessState,
             access.HasApplicationAccess,

@@ -1,7 +1,9 @@
 using IndependentApproval.Api.Application.Administration;
 using IndependentApproval.Api.Application.Authorization;
+using IndependentApproval.Api.Application.Directory;
 using IndependentApproval.Api.Application.Documents;
 using IndependentApproval.Api.Infrastructure;
+using IndependentApproval.Api.Infrastructure.ActiveDirectory;
 using IndependentApproval.Api.Infrastructure.Persistence;
 using IndependentApproval.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -54,19 +56,29 @@ builder.Services
 builder.Services.AddSingleton<
     IValidateOptions<ApplicationAuthorizationOptions>,
     ApplicationAuthorizationOptionsValidator>();
+builder.Services
+    .AddOptions<DirectoryOptions>()
+    .BindConfiguration(DirectoryOptions.SectionName)
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<DirectoryOptions>, DirectoryOptionsValidator>();
 builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = DocumentStorageOptions.MultipartBodyLengthLimitBytes);
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDataProtection();
 builder.Services.AddSingleton<IDocumentStorage, FileSystemDocumentStorage>();
 builder.Services.AddHostedService<DevelopmentDocumentStorageInitializer>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IApplicationAccessService, ApplicationAccessService>();
+builder.Services.AddScoped<IDirectoryService, LdapDirectoryService>();
+builder.Services.AddSingleton<IDirectorySelectionTokenService, DirectorySelectionTokenService>();
+builder.Services.AddScoped<ICurrentUserDisplayNameResolver, CurrentUserDisplayNameResolver>();
 builder.Services.AddScoped<IAdministrationActorAccessor, AdministrationActorAccessor>();
 builder.Services.AddScoped<
     IApplicationUserAdministrationService,
     ApplicationUserAdministrationService>();
 builder.Services.AddScoped<IRoleAdministrationService, RoleAdministrationService>();
 builder.Services.AddScoped<IAdministrationSummaryService, AdministrationSummaryService>();
+builder.Services.AddScoped<IDirectoryAdministrationService, DirectoryAdministrationService>();
 builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
     options.UseSqlServer(
         databaseConnectionString,

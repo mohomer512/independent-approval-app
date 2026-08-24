@@ -1,8 +1,10 @@
 using IndependentApproval.Api.Application.Authorization;
+using IndependentApproval.Api.Application.Directory;
 using IndependentApproval.Api.Contracts.Administration.Users;
 using IndependentApproval.Api.Contracts.Common;
 using IndependentApproval.Api.Domain.Administration;
 using IndependentApproval.Api.Infrastructure.Persistence;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace IndependentApproval.Api.Application.Administration;
@@ -10,11 +12,94 @@ namespace IndependentApproval.Api.Application.Administration;
 public sealed class ApplicationUserAdministrationService(
     IndependentApprovalDbContext dbContext,
     IAdministrationActorAccessor actorAccessor,
-    IApplicationAccessService applicationAccessService) :
+    IApplicationAccessService applicationAccessService,
+    IDirectoryService directoryService,
+    IDirectorySelectionTokenService selectionTokenService) :
     IApplicationUserAdministrationService
 {
     private const int MaximumSearchLength = 200;
     private const int MaximumLockReasonLength = 1000;
+
+    public async Task<ApplicationUserResponse> AddAsync(
+        AddApplicationUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!selectionTokenService.TryRead(
+                request.SelectionToken,
+                out var selectionReference)
+            || selectionReference is null)
+        {
+            throw new AdministrationBadRequestException(
+                "directory.invalid_selection_token",
+                "The directory selection token is invalid or has expired. Search again and reselect the user.");
+        }
+
+        var roleIds = ValidateRoleIds(request.RoleIds);
+        var actor = await actorAccessor.GetCurrentAsync(cancellationToken);
+        var directoryUser = await FindBySidAsync(
+            selectionReference.Sid,
+            cancellationToken);
+
+        if (directoryUser is null)
+        {
+            throw new AdministrationConflictException(
+                "directory.user_not_found",
+                "The selected directory user no longer exists or is no longer available.");
+        }
+
+        if (!directoryUser.Sid.SequenceEqual(selectionReference.Sid)
+            || selectionReference.ObjectGuid is Guid selectedObjectGuid
+            && directoryUser.ObjectGuid != selectedObjectGuid)
+        {
+            throw new AdministrationConflictException(
+                "directory.identity_mismatch",
+                "The selected directory identity changed. Search again and reselect the user.");
+        }
+
+        var profile = ValidateDirectoryProfile(directoryUser);
+        await EnsureNoDuplicateUserAsync(
+            profile,
+            excludedUserId: null,
+            cancellationToken);
+        var roles = await GetAssignableRolesAsync(roleIds, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            AdSid = [.. profile.Sid],
+            AdObjectGuid = profile.ObjectGuid,
+            AccountName = profile.AccountName,
+            Domain = profile.Domain,
+            SamAccountName = profile.SamAccountName,
+            UserPrincipalName = profile.UserPrincipalName,
+            NormalizedAccountName = profile.NormalizedAccountName,
+            DisplayName = profile.DisplayName,
+            Email = profile.Email,
+            IsActive = true,
+            IsLocked = false,
+            IsRemoved = false,
+            CreatedAtUtc = now,
+            CreatedByAccount = actor.AccountName,
+            CreatedByUserId = actor.ApplicationUserId
+        };
+        dbContext.ApplicationUsers.Add(user);
+
+        foreach (var role in roles)
+        {
+            dbContext.ApplicationUserRoles.Add(new ApplicationUserRole
+            {
+                Id = Guid.NewGuid(),
+                ApplicationUserId = user.Id,
+                ApplicationRoleId = role.Id,
+                AssignedAtUtc = now,
+                AssignedByAccount = actor.AccountName,
+                AssignedByUserId = actor.ApplicationUserId
+            });
+        }
+
+        await SaveChangesAsync(cancellationToken, duplicateUserPossible: true);
+        return await GetAsync(user.Id, cancellationToken);
+    }
 
     public async Task<PagedResponse<ApplicationUserResponse>> ListAsync(
         string? search,
@@ -102,6 +187,47 @@ public sealed class ApplicationUserAdministrationService(
         var rolesByUserId = await GetRolesByUserIdAsync([id], cancellationToken);
 
         return CreateResponse(user, rolesByUserId.GetValueOrDefault(id) ?? []);
+    }
+
+    public async Task<ApplicationUserResponse> RefreshDirectoryProfileAsync(
+        Guid id,
+        ApplicationUserConcurrencyRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await actorAccessor.GetCurrentAsync(cancellationToken);
+        var user = await GetMutableUserAsync(id, request.RowVersion, cancellationToken);
+        var directoryUser = await FindBySidAsync(user.AdSid, cancellationToken);
+
+        if (directoryUser is null)
+        {
+            throw new AdministrationConflictException(
+                "directory.user_not_found",
+                "The application user's immutable SID could not be found in the configured directory.");
+        }
+
+        if (!directoryUser.Sid.SequenceEqual(user.AdSid)
+            || user.AdObjectGuid is Guid storedObjectGuid
+            && directoryUser.ObjectGuid != storedObjectGuid)
+        {
+            throw new AdministrationConflictException(
+                "directory.identity_mismatch",
+                "The directory identity does not match the stored immutable identity.");
+        }
+
+        var profile = ValidateDirectoryProfile(directoryUser);
+        await EnsureNoDuplicateUserAsync(profile, user.Id, cancellationToken);
+        user.AdObjectGuid ??= profile.ObjectGuid;
+        user.AccountName = profile.AccountName;
+        user.Domain = profile.Domain;
+        user.SamAccountName = profile.SamAccountName;
+        user.UserPrincipalName = profile.UserPrincipalName;
+        user.NormalizedAccountName = profile.NormalizedAccountName;
+        user.DisplayName = profile.DisplayName;
+        user.Email = profile.Email;
+        SetModified(user, actor, DateTimeOffset.UtcNow);
+
+        await SaveChangesAsync(cancellationToken, duplicateUserPossible: true);
+        return await GetAsync(id, cancellationToken);
     }
 
     public async Task<ApplicationUserResponse> UpdateRolesAsync(
@@ -336,6 +462,156 @@ public sealed class ApplicationUserAdministrationService(
         return user;
     }
 
+    private async Task<DirectoryUser?> FindBySidAsync(
+        byte[] sid,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await directoryService.FindBySidAsync(
+                [.. sid],
+                cancellationToken);
+        }
+        catch (DirectoryServiceUnavailableException)
+        {
+            throw new AdministrationServiceUnavailableException(
+                "directory.unavailable",
+                "The configured directory could not be queried. Try again later.");
+        }
+    }
+
+    private async Task EnsureNoDuplicateUserAsync(
+        DirectoryProfile profile,
+        Guid? excludedUserId,
+        CancellationToken cancellationToken)
+    {
+        var users = dbContext.ApplicationUsers.AsNoTracking();
+
+        if (excludedUserId is Guid userId)
+        {
+            users = users.Where(user => user.Id != userId);
+        }
+
+        var duplicateSid = await users
+            .AnyAsync(
+                user => user.AdSid == profile.Sid,
+                cancellationToken);
+        var duplicateObjectGuid = profile.ObjectGuid is Guid objectGuid
+            && await users
+                .AnyAsync(
+                    user => user.AdObjectGuid == objectGuid,
+                    cancellationToken);
+        var duplicateAccount = await users
+            .AnyAsync(
+                user => user.NormalizedAccountName == profile.NormalizedAccountName,
+                cancellationToken);
+
+        if (duplicateSid || duplicateObjectGuid || duplicateAccount)
+        {
+            throw DuplicateApplicationUserConflict();
+        }
+    }
+
+    private async Task<IReadOnlyList<ApplicationRole>> GetAssignableRolesAsync(
+        IReadOnlyCollection<Guid> roleIds,
+        CancellationToken cancellationToken)
+    {
+        var roles = await dbContext.ApplicationRoles
+            .Where(role => roleIds.Contains(role.Id))
+            .ToListAsync(cancellationToken);
+
+        if (roles.Count != roleIds.Count)
+        {
+            throw AdministrationValidationException.For(
+                "roleIds",
+                "One or more roles do not exist.");
+        }
+
+        if (roles.Any(role => role.IsArchived || !role.IsActive))
+        {
+            throw new AdministrationConflictException(
+                "administration.role_unavailable",
+                "Archived or inactive roles cannot be assigned.");
+        }
+
+        return roles;
+    }
+
+    private static Guid[] ValidateRoleIds(IReadOnlyList<Guid>? requestedRoleIds)
+    {
+        if (requestedRoleIds is null)
+        {
+            throw AdministrationValidationException.For(
+                "roleIds",
+                "Role identifiers are required.");
+        }
+
+        var roleIds = requestedRoleIds.Distinct().ToArray();
+
+        if (roleIds.Length == 0)
+        {
+            throw AdministrationValidationException.For(
+                "roleIds",
+                "At least one role is required.");
+        }
+
+        if (roleIds.Length != requestedRoleIds.Count)
+        {
+            throw AdministrationValidationException.For(
+                "roleIds",
+                "Role identifiers must be unique.");
+        }
+
+        return roleIds;
+    }
+
+    private static DirectoryProfile ValidateDirectoryProfile(DirectoryUser user)
+    {
+        var domain = user.Domain.Trim();
+        var samAccountName = user.SamAccountName.Trim();
+
+        if (user.Sid.Length is < 1 or > 68
+            || string.IsNullOrWhiteSpace(domain)
+            || domain.Length > 255
+            || string.IsNullOrWhiteSpace(samAccountName)
+            || samAccountName.Length > 256
+            || samAccountName.Contains('\\')
+            || user.UserPrincipalName?.Trim().Length > 320
+            || user.DisplayName?.Trim().Length > 256
+            || user.Email?.Trim().Length > 320)
+        {
+            throw new AdministrationServiceUnavailableException(
+                "directory.invalid_result",
+                "The configured directory returned an invalid user profile.");
+        }
+
+        var accountName = $"{domain}\\{samAccountName}";
+
+        if (accountName.Length > 256)
+        {
+            throw new AdministrationServiceUnavailableException(
+                "directory.invalid_result",
+                "The configured directory returned an invalid user profile.");
+        }
+
+        return new DirectoryProfile(
+            [.. user.Sid],
+            user.ObjectGuid,
+            accountName,
+            domain,
+            samAccountName,
+            NormalizeOptional(user.UserPrincipalName),
+            AccountNameNormalizer.Normalize(accountName),
+            NormalizeOptional(user.DisplayName),
+            NormalizeOptional(user.Email));
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
     private async Task<UserProjection?> GetProjectionAsync(
         Guid id,
         CancellationToken cancellationToken) =>
@@ -459,7 +735,9 @@ public sealed class ApplicationUserAdministrationService(
         user.ModifiedByUserId = actor.ApplicationUserId;
     }
 
-    private async Task SaveChangesAsync(CancellationToken cancellationToken)
+    private async Task SaveChangesAsync(
+        CancellationToken cancellationToken,
+        bool duplicateUserPossible = false)
     {
         try
         {
@@ -471,7 +749,18 @@ public sealed class ApplicationUserAdministrationService(
                 "administration.concurrency_conflict",
                 "The resource was changed by another administrator. Reload it and try again.");
         }
+        catch (DbUpdateException exception)
+            when (duplicateUserPossible
+                  && exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            throw DuplicateApplicationUserConflict();
+        }
     }
+
+    private static AdministrationConflictException DuplicateApplicationUserConflict() =>
+        new(
+            "administration.duplicate_application_user",
+            "This directory identity already has an application user record. Restore the existing record if it was removed.");
 
     private enum UserStateChange
     {
@@ -502,4 +791,15 @@ public sealed class ApplicationUserAdministrationService(
         DateTimeOffset? RemovedAtUtc,
         string? RemovedByAccount,
         byte[] RowVersion);
+
+    private sealed record DirectoryProfile(
+        byte[] Sid,
+        Guid? ObjectGuid,
+        string AccountName,
+        string Domain,
+        string SamAccountName,
+        string? UserPrincipalName,
+        string NormalizedAccountName,
+        string? DisplayName,
+        string? Email);
 }

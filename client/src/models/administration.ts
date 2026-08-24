@@ -67,6 +67,34 @@ export interface AdminUserListQuery {
   readonly pageSize: number
 }
 
+export interface DirectoryUserSearchResult {
+  readonly selectionToken: string
+  readonly accountName: string
+  readonly domain: string
+  readonly userName: string
+  readonly userPrincipalName: string | null
+  readonly displayName: string | null
+  readonly email: string | null
+}
+
+export interface DirectoryUserSearchResponse {
+  readonly items: readonly DirectoryUserSearchResult[]
+  readonly page: number
+  readonly pageSize: number
+  readonly hasMore: boolean
+}
+
+export interface DirectoryUserSearchQuery {
+  readonly query: string
+  readonly page: number
+  readonly pageSize: number
+}
+
+export interface AddApplicationUserRequest {
+  readonly selectionToken: string
+  readonly roleIds: readonly string[]
+}
+
 export interface UpdateUserRolesRequest {
   readonly roleIds: readonly string[]
   readonly rowVersion: string

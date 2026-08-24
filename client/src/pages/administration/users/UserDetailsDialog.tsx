@@ -302,7 +302,30 @@ export function UserDetailsDialog({
                         <h3>{user.displayName}</h3>
                         <p>{user.accountName}</p>
                       </div>
-                      <StatusBadge status={getUserStatus(user)} />
+                      <div className="administration-detail-heading__actions">
+                        <StatusBadge status={getUserStatus(user)} />
+                        {!user.isProtectedSystemAdministrator ? (
+                          <Button
+                            type="button"
+                            appearance="subtle"
+                            icon={<ArrowClockwise20Regular />}
+                            disabled={submitting}
+                            onClick={() =>
+                              void runMutation(
+                                (signal) =>
+                                  adminUserService.refreshDirectoryProfile(
+                                    user.id,
+                                    { rowVersion: user.rowVersion },
+                                    signal,
+                                  ),
+                                'Directory profile was refreshed.',
+                              )
+                            }
+                          >
+                            {submitting ? 'Updating' : 'Refresh from directory'}
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
 
                     {user.isProtectedSystemAdministrator ? (
