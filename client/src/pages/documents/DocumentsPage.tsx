@@ -1,9 +1,19 @@
-import { Button, Spinner } from '@fluentui/react-components'
+import {
+  Button,
+  MessageBar,
+  MessageBarActions,
+  MessageBarBody,
+  Spinner,
+  useRestoreFocusTarget,
+} from '@fluentui/react-components'
 import {
   ArrowClockwise20Regular,
   ArrowDownload20Regular,
+  ArrowUpload24Regular,
+  Dismiss20Regular,
   DismissCircle24Regular,
   Document24Regular,
+  Eye20Regular,
 } from '@fluentui/react-icons'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -13,9 +23,16 @@ import {
   SectionPanel,
   StatusBadge,
 } from '../../components/common'
+import { useDocumentPreview } from '../../hooks/useDocumentPreview'
 import { useDocuments } from '../../hooks/useDocuments'
 import type { ApiDocument } from '../../models'
 import { documentService, getSafeApiErrorMessage } from '../../services'
+import { DocumentPreviewDialog } from './DocumentPreviewDialog'
+import { DocumentUploadDialog } from './DocumentUploadDialog'
+import {
+  getDocumentPreviewUnavailableMessage,
+  isDocumentPreviewSupported,
+} from './documentPreviewPolicy'
 
 const initialPage = 1
 const initialPageSize = 50
@@ -31,6 +48,12 @@ export function DocumentsPage() {
     initialPage,
     initialPageSize,
   )
+  const preview = useDocumentPreview()
+  const restoreFocusTargetAttributes = useRestoreFocusTarget()
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<
+    string | null
+  >(null)
   const [downloadingIds, setDownloadingIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   )
@@ -120,6 +143,13 @@ export function DocumentsPage() {
     }
   }
 
+  const handleUploaded = (uploadedDocument: ApiDocument) => {
+    setUploadSuccessMessage(
+      `${uploadedDocument.originalFileName} was uploaded successfully.`,
+    )
+    retry()
+  }
+
   const documents = data?.items ?? []
 
   return (
@@ -128,7 +158,42 @@ export function DocumentsPage() {
         eyebrow="Content"
         title="Document Library"
         description="Browse and download documents stored in the approval library."
+        actions={
+          <Button
+            {...restoreFocusTargetAttributes}
+            type="button"
+            appearance="primary"
+            icon={<ArrowUpload24Regular />}
+            onClick={() => {
+              setUploadSuccessMessage(null)
+              setUploadDialogOpen(true)
+            }}
+          >
+            Upload new file
+          </Button>
+        }
       />
+
+      {uploadSuccessMessage === null ? null : (
+        <MessageBar
+          className="document-upload-success"
+          intent="success"
+          politeness="polite"
+        >
+          <MessageBarBody>{uploadSuccessMessage}</MessageBarBody>
+          <MessageBarActions
+            containerAction={
+              <Button
+                type="button"
+                appearance="transparent"
+                icon={<Dismiss20Regular />}
+                aria-label="Dismiss upload confirmation"
+                onClick={() => setUploadSuccessMessage(null)}
+              />
+            }
+          />
+        </MessageBar>
+      )}
 
       <SectionPanel
         title="Library contents"
@@ -216,6 +281,17 @@ export function DocumentsPage() {
                         : downloadError
                           ? 'Retry download'
                           : 'Download'
+                      const previewSupported = isDocumentPreviewSupported(
+                        libraryDocument,
+                      )
+                      const previewUnavailableMessage = previewSupported
+                        ? null
+                        : getDocumentPreviewUnavailableMessage(
+                            libraryDocument,
+                          )
+                      const isOpeningPreview =
+                        preview.loading &&
+                        preview.document?.id === libraryDocument.id
 
                       return (
                         <tr key={libraryDocument.id}>
@@ -257,23 +333,52 @@ export function DocumentsPage() {
                               {formatDateTime(libraryDocument.uploadedAtUtc)}
                             </time>
                           </td>
-                          <td className="data-table__action document-download">
-                            <Button
-                              type="button"
-                              appearance="subtle"
-                              size="small"
-                              icon={<ArrowDownload20Regular />}
-                              disabled={isDownloading}
-                              aria-label={`${downloadLabel} ${libraryDocument.originalFileName}`}
-                              onClick={() =>
-                                void handleDownload(libraryDocument)
-                              }
-                            >
-                              {downloadLabel}
-                            </Button>
+                          <td className="data-table__action document-actions">
+                            <div className="document-actions__buttons">
+                              {previewSupported ? (
+                                <Button
+                                  {...restoreFocusTargetAttributes}
+                                  type="button"
+                                  appearance="subtle"
+                                  size="small"
+                                  icon={<Eye20Regular />}
+                                  disabled={isOpeningPreview}
+                                  aria-label={`${isOpeningPreview ? 'Opening preview of' : 'Open preview of'} ${libraryDocument.originalFileName}`}
+                                  onClick={() =>
+                                    void preview.openDocument(libraryDocument)
+                                  }
+                                >
+                                  {isOpeningPreview ? 'Opening' : 'Open'}
+                                </Button>
+                              ) : (
+                                <span
+                                  className="document-actions__preview-unavailable"
+                                >
+                                  <span aria-hidden="true">
+                                    Download to open
+                                  </span>
+                                  <span className="visually-hidden">
+                                    {previewUnavailableMessage}
+                                  </span>
+                                </span>
+                              )}
+                              <Button
+                                type="button"
+                                appearance="subtle"
+                                size="small"
+                                icon={<ArrowDownload20Regular />}
+                                disabled={isDownloading}
+                                aria-label={`${downloadLabel} ${libraryDocument.originalFileName}`}
+                                onClick={() =>
+                                  void handleDownload(libraryDocument)
+                                }
+                              >
+                                {downloadLabel}
+                              </Button>
+                            </div>
                             {downloadError ? (
                               <span
-                                className="document-download__error"
+                                className="document-actions__error"
                                 role="alert"
                               >
                                 {downloadError}
@@ -296,6 +401,33 @@ export function DocumentsPage() {
           )}
         </div>
       </SectionPanel>
+
+      <DocumentUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUploaded={handleUploaded}
+      />
+      <DocumentPreviewDialog
+        document={preview.document}
+        content={preview.content}
+        loading={preview.loading}
+        error={preview.error}
+        downloadError={
+          preview.document === null
+            ? null
+            : downloadErrors[preview.document.id] ?? null
+        }
+        downloading={
+          preview.document === null
+            ? false
+            : downloadingIds.has(preview.document.id)
+        }
+        onClose={preview.closePreview}
+        onRetry={preview.retry}
+        onDownload={(libraryDocument) =>
+          void handleDownload(libraryDocument)
+        }
+      />
     </div>
   )
 }

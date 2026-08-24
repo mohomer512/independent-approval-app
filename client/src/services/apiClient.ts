@@ -55,8 +55,24 @@ function getHttpErrorMessage(status: number): string {
     return 'The API is temporarily unavailable. Please try again.'
   }
 
+  if (status === 413) {
+    return 'The request is too large. Choose a smaller file and try again.'
+  }
+
+  if (status === 415) {
+    return 'The selected file type could not be accepted. Choose a supported file and try again.'
+  }
+
+  if (status === 401) {
+    return 'Your Windows session could not be authenticated. Refresh the page and try again.'
+  }
+
   if (status === 404) {
     return 'The requested API resource is unavailable.'
+  }
+
+  if (status === 400) {
+    return 'The API rejected the request. Check the supplied values and try again.'
   }
 
   return 'The API request could not be completed. Please try again.'

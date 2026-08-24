@@ -376,6 +376,10 @@
   min-width: 1080px;
 }
 
+.data-table--documents {
+  min-width: 1180px;
+}
+
 .document-name {
   display: flex;
   min-width: 230px;
@@ -478,19 +482,189 @@
   font-style: italic;
 }
 
-.document-download.data-table__action {
-  width: 190px;
-  min-width: 190px;
+.document-actions.data-table__action {
+  width: 300px;
+  min-width: 300px;
 }
 
-.document-download__error {
+.document-actions__buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.document-actions__preview-unavailable {
+  max-width: 118px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: end;
+}
+
+.document-actions__error {
   display: block;
-  max-width: 220px;
+  max-width: 280px;
   margin-block-start: 6px;
   margin-inline-start: auto;
   color: var(--color-danger);
   font-size: 10px;
   line-height: 1.4;
+}
+
+.document-upload-success {
+  width: 100%;
+}
+
+.document-upload-dialog {
+  width: min(92vw, 600px);
+  max-width: 600px;
+}
+
+.document-upload-dialog__form {
+  display: contents;
+}
+
+.document-upload-dialog__content,
+.document-upload-dialog__fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.document-upload-dialog__content {
+  gap: 18px;
+}
+
+.document-upload-dialog__introduction {
+  margin-block-end: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.document-upload-dialog__fields {
+  gap: 16px;
+}
+
+.document-upload-dialog__file-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 5px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.document-upload-dialog__file-input:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+.document-upload-dialog__file-input::file-selector-button {
+  padding: 7px 11px;
+  margin-inline-end: 10px;
+  color: var(--color-brand-700);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.document-upload-dialog__file-input:disabled,
+.document-upload-dialog__file-input:disabled::file-selector-button {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.document-upload-dialog__selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.document-upload-dialog__selection-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.fui-DialogSurface.document-preview {
+  width: min(96vw, 1000px);
+  max-width: 1000px;
+}
+
+.document-preview__state {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 28px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.document-preview__state > p {
+  max-width: 560px;
+  margin-block-end: 0;
+  line-height: 1.55;
+}
+
+.document-preview__state--error {
+  color: var(--color-danger);
+}
+
+.document-preview__frame {
+  width: 100%;
+  min-height: 60vh;
+  background: var(--color-surface-subtle);
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.document-preview__pdf > p {
+  margin-block: 9px 0;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.document-preview__image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 65vh;
+  margin-inline: auto;
+  object-fit: contain;
+}
+
+.document-preview__text {
+  max-height: 65vh;
+  padding: 18px;
+  margin: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 .administration-summary {
@@ -861,6 +1035,31 @@
   .document-library__state--error > .fui-Button {
     width: 100%;
     max-width: 260px;
+  }
+
+  .document-upload-dialog,
+  .document-preview {
+    width: 96vw;
+  }
+
+  .document-upload-dialog__selection {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .document-upload-dialog__actions,
+  .document-preview__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .document-upload-dialog__actions > .fui-Button,
+  .document-preview__actions > .fui-Button {
+    width: 100%;
+  }
+
+  .document-preview__frame {
+    min-height: 55vh;
   }
 
   .administration-card.fui-Card {
