@@ -126,6 +126,41 @@ public sealed class ApprovalRequestConfiguration : IEntityTypeConfiguration<Appr
             })
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(request => request.WorkflowDefinition)
+            .WithMany(workflow => workflow.Requests)
+            .HasForeignKey(request => request.WorkflowDefinitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(request => request.WorkflowVersion)
+            .WithMany(version => version.Requests)
+            .HasForeignKey(request => new
+            {
+                request.WorkflowVersionId,
+                request.WorkflowDefinitionId,
+                request.RequestTypeVersionId
+            })
+            .HasPrincipalKey(version => new
+            {
+                version.Id,
+                version.WorkflowDefinitionId,
+                version.RequestTypeVersionId
+            })
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(request => request.CurrentWorkflowStep)
+            .WithMany(step => step.CurrentRequests)
+            .HasForeignKey(request => new
+            {
+                request.CurrentWorkflowStepId,
+                request.WorkflowVersionId
+            })
+            .HasPrincipalKey(step => new
+            {
+                step.Id,
+                step.WorkflowVersionId
+            })
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(request => request.RequestedByUser)
             .WithMany()
             .HasForeignKey(request => request.RequestedByUserId)

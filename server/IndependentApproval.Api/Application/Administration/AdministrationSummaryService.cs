@@ -1,4 +1,5 @@
 using IndependentApproval.Api.Contracts.Administration;
+using IndependentApproval.Api.Domain.Workflows;
 using IndependentApproval.Api.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,11 +26,18 @@ public sealed class AdministrationSummaryService(
             .CountAsync(
                 requestType => !requestType.IsArchived,
                 cancellationToken);
+        var publishedWorkflowCount = await dbContext.WorkflowDefinitions
+            .AsNoTracking()
+            .CountAsync(
+                workflow => !workflow.IsArchived
+                            && workflow.Versions.Any(version =>
+                                version.Lifecycle == WorkflowVersionLifecycle.Published),
+                cancellationToken);
 
         return new AdministrationSummaryResponse(
             activeUserCount,
             activeRoleCount,
-            PublishedWorkflowCount: 0,
+            publishedWorkflowCount,
             activeRequestTypeCount);
     }
 }

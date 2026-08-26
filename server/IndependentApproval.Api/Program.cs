@@ -81,6 +81,7 @@ builder.Services.AddScoped<IRoleAdministrationService, RoleAdministrationService
 builder.Services.AddScoped<IAdministrationSummaryService, AdministrationSummaryService>();
 builder.Services.AddScoped<IDirectoryAdministrationService, DirectoryAdministrationService>();
 builder.Services.AddScoped<IRequestTypeAdministrationService, RequestTypeAdministrationService>();
+builder.Services.AddScoped<IWorkflowAdministrationService, WorkflowAdministrationService>();
 builder.Services.AddScoped<IRequestNumberGenerator, RequestNumberGenerator>();
 builder.Services.AddDbContext<IndependentApprovalDbContext>(options =>
     options.UseSqlServer(

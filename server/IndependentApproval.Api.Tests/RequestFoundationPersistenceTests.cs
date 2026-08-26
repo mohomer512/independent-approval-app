@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using IndependentApproval.Api.Application.Requests;
 using IndependentApproval.Api.Domain.Documents;
 using IndependentApproval.Api.Domain.Requests;
+using IndependentApproval.Api.Domain.Workflows;
 using IndependentApproval.Api.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -227,6 +228,10 @@ public sealed class RequestFoundationPersistenceTests(
         var foreignFieldId = Guid.NewGuid();
         var requestId = Guid.NewGuid();
         var documentId = Guid.NewGuid();
+        var workflowDefinitionId = Guid.NewGuid();
+        var workflowVersionId = Guid.NewGuid();
+        var workflowCode = $"FOUNDATION_{Guid.NewGuid():N}".ToUpperInvariant();
+        var workflowSlug = $"foundation-{Guid.NewGuid():N}";
         var firstSuffix = Guid.NewGuid().ToString("N")[..7].ToUpperInvariant();
         var secondSuffix = Guid.NewGuid().ToString("N")[..7].ToUpperInvariant();
 
@@ -298,14 +303,53 @@ public sealed class RequestFoundationPersistenceTests(
                 UploadedBy = AdministrationApiFixture.BootstrapAdministratorAccount,
                 UploadedAtUtc = now
             });
+            dbContext.WorkflowDefinitions.Add(new WorkflowDefinition
+            {
+                Id = workflowDefinitionId,
+                Code = workflowCode,
+                NormalizedCode = workflowCode,
+                CreatedAtUtc = now,
+                CreatedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                CreatedByUserId = fixture.BootstrapAdministratorId
+            });
+            dbContext.WorkflowSlugReservations.Add(new WorkflowSlugReservation
+            {
+                NormalizedSlug = workflowSlug,
+                WorkflowDefinitionId = workflowDefinitionId,
+                ReservedAtUtc = now,
+                ReservedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                ReservedByUserId = fixture.BootstrapAdministratorId
+            });
+            dbContext.WorkflowVersions.Add(new WorkflowVersion
+            {
+                Id = workflowVersionId,
+                WorkflowDefinitionId = workflowDefinitionId,
+                RequestTypeVersionId = firstVersionId,
+                VersionNumber = 1,
+                NameEnglish = "Foundation workflow",
+                NameArabic = "سير عمل الأساس",
+                DescriptionEnglish = "Workflow owner for stable request-schema tests.",
+                DescriptionArabic = "سير عمل لاختبارات مخطط الطلب المستقر.",
+                NavigationLabelEnglish = "Foundation workflow",
+                NavigationLabelArabic = "سير عمل الأساس",
+                NavigationSlug = workflowSlug,
+                NavigationOrder = 1,
+                Lifecycle = WorkflowVersionLifecycle.Published,
+                CreatedAtUtc = now,
+                CreatedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                CreatedByUserId = fixture.BootstrapAdministratorId,
+                PublishedAtUtc = now,
+                PublishedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                PublishedByUserId = fixture.BootstrapAdministratorId
+            });
             dbContext.ApprovalRequests.Add(new ApprovalRequest
             {
                 Id = requestId,
                 RequestNumber = $"A{firstSuffix}-2026-000001",
                 RequestTypeId = firstRootId,
                 RequestTypeVersionId = firstVersionId,
-                WorkflowDefinitionId = Guid.NewGuid(),
-                WorkflowVersionId = Guid.NewGuid(),
+                WorkflowDefinitionId = workflowDefinitionId,
+                WorkflowVersionId = workflowVersionId,
                 Title = "Stable foundation request",
                 Status = ApprovalRequestStatus.Draft,
                 RequestedByUserId = fixture.BootstrapAdministratorId,

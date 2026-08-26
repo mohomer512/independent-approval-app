@@ -1,6 +1,7 @@
 using IndependentApproval.Api.Domain.Administration;
 using IndependentApproval.Api.Domain.Documents;
 using IndependentApproval.Api.Domain.Requests;
+using IndependentApproval.Api.Domain.Workflows;
 using Microsoft.EntityFrameworkCore;
 
 namespace IndependentApproval.Api.Infrastructure.Persistence;
@@ -42,6 +43,25 @@ public sealed class IndependentApprovalDbContext(
         Set<RequestRichDocumentRevision>();
 
     public DbSet<RequestNumberSequence> RequestNumberSequences => Set<RequestNumberSequence>();
+
+    public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
+
+    public DbSet<WorkflowVersion> WorkflowVersions => Set<WorkflowVersion>();
+
+    public DbSet<WorkflowSlugReservation> WorkflowSlugReservations =>
+        Set<WorkflowSlugReservation>();
+
+    public DbSet<WorkflowVersionStarterRole> WorkflowVersionStarterRoles =>
+        Set<WorkflowVersionStarterRole>();
+
+    public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
+
+    public DbSet<WorkflowStepRole> WorkflowStepRoles => Set<WorkflowStepRole>();
+
+    public DbSet<WorkflowTransition> WorkflowTransitions => Set<WorkflowTransition>();
+
+    public DbSet<WorkflowStepFieldPermission> WorkflowStepFieldPermissions =>
+        Set<WorkflowStepFieldPermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

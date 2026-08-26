@@ -1,12 +1,14 @@
-using IndependentApproval.Api.Domain.Workflows;
+using IndependentApproval.Api.Domain.Requests;
 
-namespace IndependentApproval.Api.Domain.Requests;
+namespace IndependentApproval.Api.Domain.Workflows;
 
-public sealed class RequestTypeVersion
+public sealed class WorkflowVersion
 {
     public Guid Id { get; set; }
 
-    public Guid RequestTypeId { get; set; }
+    public Guid WorkflowDefinitionId { get; set; }
+
+    public Guid RequestTypeVersionId { get; set; }
 
     public int VersionNumber { get; set; }
 
@@ -18,13 +20,15 @@ public sealed class RequestTypeVersion
 
     public string DescriptionArabic { get; set; } = string.Empty;
 
-    public string RequestPrefix { get; set; } = string.Empty;
+    public string NavigationLabelEnglish { get; set; } = string.Empty;
+
+    public string NavigationLabelArabic { get; set; } = string.Empty;
 
     public string NavigationSlug { get; set; } = string.Empty;
 
     public int NavigationOrder { get; set; }
 
-    public RequestTypeVersionLifecycle Lifecycle { get; set; } = RequestTypeVersionLifecycle.Draft;
+    public WorkflowVersionLifecycle Lifecycle { get; set; } = WorkflowVersionLifecycle.Draft;
 
     public DateTimeOffset CreatedAtUtc { get; set; }
 
@@ -52,15 +56,19 @@ public sealed class RequestTypeVersion
 
     public byte[] RowVersion { get; set; } = [];
 
-    public RequestType RequestType { get; set; } = null!;
+    public WorkflowDefinition WorkflowDefinition { get; set; } = null!;
 
-    public RequestTypePrefixReservation PrefixReservation { get; set; } = null!;
+    public RequestTypeVersion RequestTypeVersion { get; set; } = null!;
 
-    public RequestTypeSlugReservation SlugReservation { get; set; } = null!;
+    public WorkflowSlugReservation SlugReservation { get; set; } = null!;
 
-    public ICollection<RequestFieldDefinition> Fields { get; set; } = [];
+    public ICollection<WorkflowVersionStarterRole> StarterRoles { get; set; } = [];
 
-    public ICollection<WorkflowVersion> WorkflowVersions { get; set; } = [];
+    public ICollection<WorkflowStep> Steps { get; set; } = [];
+
+    public ICollection<WorkflowTransition> Transitions { get; set; } = [];
+
+    public ICollection<WorkflowStepFieldPermission> FieldPermissions { get; set; } = [];
 
     public ICollection<ApprovalRequest> Requests { get; set; } = [];
 }

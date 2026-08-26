@@ -1,3 +1,5 @@
+using IndependentApproval.Api.Domain.Workflows;
+
 namespace IndependentApproval.Api.Domain.Requests;
 
 public sealed class RequestFieldDefinition
@@ -55,4 +57,6 @@ public sealed class RequestFieldDefinition
     public ICollection<RequestDocument> Documents { get; set; } = [];
 
     public ICollection<RequestRichDocumentRevision> RichDocumentRevisions { get; set; } = [];
+
+    public ICollection<WorkflowStepFieldPermission> WorkflowStepFieldPermissions { get; set; } = [];
 }

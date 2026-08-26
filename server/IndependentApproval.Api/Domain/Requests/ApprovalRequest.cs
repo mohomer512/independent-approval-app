@@ -1,4 +1,5 @@
 using IndependentApproval.Api.Domain.Administration;
+using IndependentApproval.Api.Domain.Workflows;
 
 namespace IndependentApproval.Api.Domain.Requests;
 
@@ -37,6 +38,12 @@ public sealed class ApprovalRequest
     public RequestType RequestType { get; set; } = null!;
 
     public RequestTypeVersion RequestTypeVersion { get; set; } = null!;
+
+    public WorkflowDefinition WorkflowDefinition { get; set; } = null!;
+
+    public WorkflowVersion WorkflowVersion { get; set; } = null!;
+
+    public WorkflowStep? CurrentWorkflowStep { get; set; }
 
     public ApplicationUser RequestedByUser { get; set; } = null!;
 

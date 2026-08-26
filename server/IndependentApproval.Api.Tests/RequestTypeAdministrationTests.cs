@@ -6,6 +6,7 @@ using IndependentApproval.Api.Contracts.Administration.RequestTypes;
 using IndependentApproval.Api.Contracts.Common;
 using IndependentApproval.Api.Contracts.Security;
 using IndependentApproval.Api.Domain.Requests;
+using IndependentApproval.Api.Domain.Workflows;
 using IndependentApproval.Api.Tests.Infrastructure;
 
 namespace IndependentApproval.Api.Tests;
@@ -502,18 +503,59 @@ public sealed class RequestTypeAdministrationTests(
         var draft = Assert.Single(created.Versions);
         await fixture.QueryDatabaseAsync(async dbContext =>
         {
+            var now = DateTimeOffset.UtcNow;
+            var workflowDefinitionId = Guid.NewGuid();
+            var workflowVersionId = Guid.NewGuid();
+            var workflowCode = $"LOCK_{Guid.NewGuid():N}".ToUpperInvariant();
+            var workflowSlug = $"lock-{Guid.NewGuid():N}";
+            dbContext.WorkflowDefinitions.Add(new WorkflowDefinition
+            {
+                Id = workflowDefinitionId,
+                Code = workflowCode,
+                NormalizedCode = workflowCode,
+                CreatedAtUtc = now,
+                CreatedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                CreatedByUserId = fixture.BootstrapAdministratorId
+            });
+            dbContext.WorkflowSlugReservations.Add(new WorkflowSlugReservation
+            {
+                NormalizedSlug = workflowSlug,
+                WorkflowDefinitionId = workflowDefinitionId,
+                ReservedAtUtc = now,
+                ReservedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                ReservedByUserId = fixture.BootstrapAdministratorId
+            });
+            dbContext.WorkflowVersions.Add(new WorkflowVersion
+            {
+                Id = workflowVersionId,
+                WorkflowDefinitionId = workflowDefinitionId,
+                RequestTypeVersionId = draft.Id,
+                VersionNumber = 1,
+                NameEnglish = "Request-type lock workflow",
+                NameArabic = "سير عمل قفل نوع الطلب",
+                DescriptionEnglish = "Owns the request used to prove historical locking.",
+                DescriptionArabic = "يمتلك الطلب المستخدم لإثبات القفل التاريخي.",
+                NavigationLabelEnglish = "Lock workflow",
+                NavigationLabelArabic = "سير عمل القفل",
+                NavigationSlug = workflowSlug,
+                NavigationOrder = 1,
+                Lifecycle = WorkflowVersionLifecycle.Draft,
+                CreatedAtUtc = now,
+                CreatedByAccount = AdministrationApiFixture.BootstrapAdministratorAccount,
+                CreatedByUserId = fixture.BootstrapAdministratorId
+            });
             dbContext.ApprovalRequests.Add(new ApprovalRequest
             {
                 Id = Guid.NewGuid(),
                 RequestNumber = $"{draft.RequestPrefix}-2026-999999",
                 RequestTypeId = created.Id,
                 RequestTypeVersionId = draft.Id,
-                WorkflowDefinitionId = Guid.NewGuid(),
-                WorkflowVersionId = Guid.NewGuid(),
+                WorkflowDefinitionId = workflowDefinitionId,
+                WorkflowVersionId = workflowVersionId,
                 Title = "Historical version lock test",
                 Status = ApprovalRequestStatus.Draft,
                 RequestedByUserId = fixture.BootstrapAdministratorId,
-                CreatedAtUtc = DateTimeOffset.UtcNow
+                CreatedAtUtc = now
             });
             await dbContext.SaveChangesAsync();
             return true;

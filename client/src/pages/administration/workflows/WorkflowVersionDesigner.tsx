@@ -181,38 +181,6 @@ export function WorkflowVersionDesigner({
   const editable = version.lifecycle === 'draft' && !workflow.isArchived
   const busy = operation !== null
   const rebindChanged = requestTypeVersionId !== version.requestTypeVersionId
-  const configuredRequestTypeVersion = options?.requestTypeVersions.find(
-    (item) => item.requestTypeVersionId === version.requestTypeVersionId,
-  ) ?? null
-  const requestTypeVersion = useMemo(() => {
-    if (configuredRequestTypeVersion) return configuredRequestTypeVersion
-    if (editable) return null
-
-    const permissionFields = new Map(
-      version.steps.flatMap((step) => step.fieldPermissions).map((permission) => [
-        permission.requestFieldDefinitionId,
-        {
-          id: permission.requestFieldDefinitionId,
-          key: permission.fieldKey,
-          labelEnglish: permission.fieldKey,
-          labelArabic: permission.fieldKey,
-          fieldType: permission.fieldType,
-          isRequired: false,
-          isActive: true,
-          documentMode: null,
-        },
-      ]),
-    )
-    return {
-      requestTypeId: version.requestTypeId,
-      requestTypeCode: version.requestTypeCode,
-      requestTypeVersionId: version.requestTypeVersionId,
-      versionNumber: version.requestTypeVersionNumber,
-      nameEnglish: version.requestTypeCode,
-      nameArabic: version.requestTypeCode,
-      fields: [...permissionFields.values()],
-    }
-  }, [configuredRequestTypeVersion, editable, version])
   const sortedSteps = useMemo(
     () => [...version.steps].sort((a, b) => a.sortOrder - b.sortOrder || a.key.localeCompare(b.key)),
     [version.steps],
@@ -519,7 +487,7 @@ export function WorkflowVersionDesigner({
 
       <section className="request-type-editor-section">
         <div className="request-type-editor-section__heading request-type-editor-section__heading--actions"><div><h3>Steps and graph coordinates</h3><p>{sortedSteps.length} step{sortedSteps.length === 1 ? '' : 's'}. Coordinates and transition targets make branches and loops explicit.</p></div>{editable ? <Button type="button" appearance="primary" icon={<Add20Regular />} disabled={busy || !options} onClick={(event) => { editorTriggerRef.current = event.currentTarget; setStepDialog('new') }}>Add step</Button> : null}</div>
-        {sortedSteps.length === 0 ? <div className="request-type-fields-empty" role="status"><h4>No steps</h4><p>Add a start step and assign active custom roles.</p></div> : <div className="data-table-scroll" tabIndex={0}><table className="data-table workflow-steps-table"><caption className="visually-hidden">Workflow steps and coordinates</caption><thead><tr><th scope="col">Step</th><th scope="col">Roles</th><th scope="col">Position</th><th scope="col">Capabilities</th><th scope="col">Status</th><th scope="col"><span className="visually-hidden">Actions</span></th></tr></thead><tbody>{sortedSteps.map((step) => <tr key={step.id}><td><span className="data-table__primary">{step.nameEnglish}</span><span className="data-table__secondary" dir="rtl" lang="ar">{step.nameArabic}</span><code>{step.key}</code></td><td>{step.roles.map((role) => role.nameEnglish).join(', ') || 'Unassigned'}</td><td>Order {step.sortOrder}<span className="data-table__secondary">X {step.diagramX} · Y {step.diagramY}</span></td><td><details className="workflow-capability-details"><summary>{getCatalogueLabel(options?.commentPolicies ?? [], step.commentPolicy)} comments</summary><ul><li>{step.canEditRequestData ? 'Edit request data' : 'No request-data editing'}</li><li>{step.canOpenDocuments ? 'Open documents' : 'Cannot open documents'}</li><li>{step.canEditDocuments ? 'Edit documents' : 'No document editing'}</li><li>{step.canForwardDocuments ? 'Forward documents' : 'No document forwarding'}</li><li>{step.fieldPermissions.length} custom field permissions</li></ul></details></td><td><div className="workflow-status-stack">{step.isStartStep ? <StatusBadge status="Start" /> : null}<StatusBadge status={step.isActive ? 'Active' : 'Inactive'} /></div></td><td className="data-table__action"><div className="administration-table__actions"><Button type="button" appearance="subtle" size="small" icon={<Grid20Regular />} disabled={!requestTypeVersion} onClick={(event) => { editorTriggerRef.current = event.currentTarget; setMatrixStep(step) }}>{editable ? 'Matrix' : 'View matrix'}</Button>{editable ? <><Button type="button" appearance="subtle" size="small" icon={<Edit20Regular />} disabled={busy} onClick={(event) => { editorTriggerRef.current = event.currentTarget; setStepDialog(step) }}>Edit</Button><Button type="button" appearance="subtle" size="small" className="administration-danger-button" icon={<Delete20Regular />} disabled={busy} onClick={(event) => { confirmationTriggerRef.current = event.currentTarget; setDeleteTarget({ kind: 'step', item: step }) }}>Delete</Button></> : null}</div></td></tr>)}</tbody></table></div>}
+        {sortedSteps.length === 0 ? <div className="request-type-fields-empty" role="status"><h4>No steps</h4><p>Add a start step and assign active custom roles.</p></div> : <div className="data-table-scroll" tabIndex={0}><table className="data-table workflow-steps-table"><caption className="visually-hidden">Workflow steps and coordinates</caption><thead><tr><th scope="col">Step</th><th scope="col">Roles</th><th scope="col">Position</th><th scope="col">Capabilities</th><th scope="col">Status</th><th scope="col"><span className="visually-hidden">Actions</span></th></tr></thead><tbody>{sortedSteps.map((step) => <tr key={step.id}><td><span className="data-table__primary">{step.nameEnglish}</span><span className="data-table__secondary" dir="rtl" lang="ar">{step.nameArabic}</span><code>{step.key}</code></td><td>{step.roles.map((role) => role.nameEnglish).join(', ') || 'Unassigned'}</td><td>Order {step.sortOrder}<span className="data-table__secondary">X {step.diagramX} · Y {step.diagramY}</span></td><td><details className="workflow-capability-details"><summary>{getCatalogueLabel(options?.commentPolicies ?? [], step.commentPolicy)} comments</summary><ul><li>{step.canEditRequestData ? 'Edit request data' : 'No request-data editing'}</li><li>{step.canOpenDocuments ? 'Open documents' : 'Cannot open documents'}</li><li>{step.canEditDocuments ? 'Edit documents' : 'No document editing'}</li><li>{step.canForwardDocuments ? 'Forward documents' : 'No document forwarding'}</li><li>{step.fieldPermissions.length} custom field permissions</li></ul></details></td><td><div className="workflow-status-stack">{step.isStartStep ? <StatusBadge status="Start" /> : null}<StatusBadge status={step.isActive ? 'Active' : 'Inactive'} /></div></td><td className="data-table__action"><div className="administration-table__actions"><Button type="button" appearance="subtle" size="small" icon={<Grid20Regular />} onClick={(event) => { editorTriggerRef.current = event.currentTarget; setMatrixStep(step) }}>{editable ? 'Matrix' : 'View matrix'}</Button>{editable ? <><Button type="button" appearance="subtle" size="small" icon={<Edit20Regular />} disabled={busy} onClick={(event) => { editorTriggerRef.current = event.currentTarget; setStepDialog(step) }}>Edit</Button><Button type="button" appearance="subtle" size="small" className="administration-danger-button" icon={<Delete20Regular />} disabled={busy} onClick={(event) => { confirmationTriggerRef.current = event.currentTarget; setDeleteTarget({ kind: 'step', item: step }) }}>Delete</Button></> : null}</div></td></tr>)}</tbody></table></div>}
       </section>
 
       <section className="request-type-editor-section">
@@ -529,7 +497,7 @@ export function WorkflowVersionDesigner({
 
       {stepDialog && options ? <WorkflowStepDialog key={stepDialog === 'new' ? 'new-step' : stepDialog.id} workflowId={workflow.id} version={version} step={stepDialog === 'new' ? null : stepDialog} roles={options.roles} commentPolicies={options.commentPolicies} onClose={closeEditor} onSaved={(saved) => { setStepDialog(null); onReload(saved.id) }} /> : null}
       {transitionDialog && options ? <WorkflowTransitionDialog key={transitionDialog === 'new' ? 'new-transition' : transitionDialog.id} workflowId={workflow.id} version={version} transition={transitionDialog === 'new' ? null : transitionDialog} steps={version.steps} actionTypes={options.actionTypes} resultingStatuses={options.resultingStatuses} terminalOutcomes={options.terminalOutcomes} onClose={closeEditor} onSaved={(saved) => { setTransitionDialog(null); onReload(saved.id) }} /> : null}
-      {matrixStep && options && requestTypeVersion ? <WorkflowPermissionMatrixDialog key={`${matrixStep.id}:${matrixStep.rowVersion}`} workflowId={workflow.id} version={version} step={matrixStep} requestTypeVersion={requestTypeVersion} fieldAccessModes={options.fieldAccessModes} documentAccessModes={options.documentAccessModes} readOnly={!editable} onClose={closeEditor} onSaved={(saved) => { setMatrixStep(null); onReload(saved.id) }} /> : null}
+      {matrixStep && options ? <WorkflowPermissionMatrixDialog key={`${matrixStep.id}:${matrixStep.rowVersion}`} workflowId={workflow.id} version={version} step={matrixStep} requestFields={version.requestFields} fieldAccessModes={options.fieldAccessModes} documentAccessModes={options.documentAccessModes} readOnly={!editable} onClose={closeEditor} onSaved={(saved) => { setMatrixStep(null); onReload(saved.id) }} /> : null}
 
       <Dialog open={pendingAction !== null} onOpenChange={(_, data) => !data.open && closeAction()}><DialogSurface className="administration-dialog"><DialogBody><DialogTitle>{pendingAction ? actionCopy[pendingAction].title : ''}</DialogTitle><DialogContent className="administration-dialog__content"><p>{pendingAction ? actionCopy[pendingAction].description : ''}</p>{operationError ? <MessageBar intent="error"><MessageBarBody>{operationError}{conflict ? ' Reload the designer before trying again.' : ''}</MessageBarBody></MessageBar> : null}</DialogContent><DialogActions><Button type="button" appearance="secondary" disabled={operation === 'lifecycle'} onClick={closeAction}>Cancel</Button><Button type="button" appearance="primary" disabled={operation === 'lifecycle'} icon={operation === 'lifecycle' ? <Spinner size="tiny" /> : undefined} onClick={() => void handleLifecycleAction()}>{operation === 'lifecycle' ? 'Working' : pendingAction ? actionCopy[pendingAction].button : 'Continue'}</Button></DialogActions></DialogBody></DialogSurface></Dialog>
 
